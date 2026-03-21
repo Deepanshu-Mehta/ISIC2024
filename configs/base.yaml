@@ -18,11 +18,10 @@ data:
     - iddx_3
     - iddx_4
     - iddx_5
-  # Non-feature metadata (keep lesion_id for has_lesion_id indicator, keep attribution)
+  # Non-feature metadata to drop (tbp_tile_type KEPT — mild malignancy signal per EDA)
   meta_cols:
-    - image_type
-    - tbp_tile_type
-    - copyright_license
+    - image_type        # zero variance (all "TBP tile: ISIC") — drop
+    - copyright_license # purely administrative — drop
 
 features:
   correlation_threshold: 0.90   # test 0.85 / 0.90 / 0.95 during exploration
