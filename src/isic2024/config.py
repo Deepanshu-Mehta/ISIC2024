@@ -24,8 +24,8 @@ class DataConfig:
         "iddx_full", "iddx_1", "iddx_2", "iddx_3", "iddx_4", "iddx_5",
     ])
     meta_cols: list[str] = field(default_factory=lambda: [
-        "image_type", "tbp_tile_type", "copyright_license",
-    ])
+        "image_type", "copyright_license",
+    ])  # tbp_tile_type KEPT — EDA shows mild malignancy signal (3D:white vs 3D:XP)
 
     @property
     def train_path(self) -> Path:
@@ -144,7 +144,7 @@ class Config:
     seed_averaging: SeedAveragingConfig = field(default_factory=SeedAveragingConfig)
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "Config":
+    def from_yaml(cls, path: str | Path) -> Config:
         """Load configuration from a YAML file."""
         with open(path) as f:
             raw: dict[str, Any] = yaml.safe_load(f)
