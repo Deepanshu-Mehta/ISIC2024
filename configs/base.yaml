@@ -1,0 +1,109 @@
+eps: 1.0e-8
+seed: 42
+
+data:
+  raw_dir: data/raw/isic-2024-challenge
+  processed_dir: data/processed
+  train_file: train-metadata.csv
+  test_file: test-metadata.csv
+  target_col: target
+  patient_col: patient_id
+  # Columns to drop — only populated for confirmed malignant cases (leakage)
+  leakage_cols:
+    - mel_thick_mm
+    - mel_mitotic_index
+    - iddx_full
+    - iddx_1
+    - iddx_2
+    - iddx_3
+    - iddx_4
+    - iddx_5
+  # Non-feature metadata (keep lesion_id for has_lesion_id indicator, keep attribution)
+  meta_cols:
+    - image_type
+    - tbp_tile_type
+    - copyright_license
+
+features:
+  correlation_threshold: 0.90   # test 0.85 / 0.90 / 0.95 during exploration
+  variance_threshold: 1.0e-10
+  quasi_const_threshold: 0.995  # drop if single value covers >99.5% of rows
+  # Which feature groups to compute
+  use_color: true
+  use_shape: true
+  use_interaction: true
+  use_location: true
+  use_ugly_duckling: true
+
+cv:
+  n_splits: 5
+  seed: 42
+
+lgbm:
+  objective: binary
+  metric: auc
+  verbosity: -1
+  n_estimators: 2000
+  learning_rate: 0.05
+  num_leaves: 63
+  max_depth: 6
+  min_child_samples: 80
+  feature_fraction: 0.8
+  bagging_fraction: 0.8
+  bagging_freq: 1
+  lambda_l1: 0.1
+  lambda_l2: 0.1
+  scale_pos_weight: 100   # approx neg/pos — discovered at runtime
+  early_stopping_rounds: 100
+
+xgb:
+  objective: binary:logistic
+  eval_metric: auc
+  n_estimators: 2000
+  learning_rate: 0.05
+  max_depth: 6
+  min_child_weight: 10
+  subsample: 0.8
+  colsample_bytree: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  max_delta_step: 1       # critical for convergence with extreme imbalance
+  scale_pos_weight: 100
+  early_stopping_rounds: 100
+  verbosity: 0
+
+catboost:
+  iterations: 2000
+  learning_rate: 0.05
+  depth: 6
+  l2_leaf_reg: 3.0
+  early_stopping_rounds: 100
+  verbose: 0
+  # auto_class_weights verified at runtime; fallback to manual class_weights
+
+svm:
+  kernel: rbf
+  C: 1.0
+  gamma: scale
+  probability: true         # enables Platt scaling (calibrated probabilities)
+  class_weight: balanced
+  # SVM runs on a subsample for speed — tune on subset, evaluate on full OOF
+
+calibration:
+  method: isotonic           # primary for GBDT; options: isotonic, platt, temperature
+  # Note: calibration does NOT affect pAUC (rank-based metric)
+  # It matters for ECE, Brier score, and clinical interpretation
+
+optuna:
+  n_trials: 100
+  timeout: 3600             # seconds
+  direction: maximize       # maximise pAUC
+
+seed_averaging:
+  enabled: true
+  seeds:
+    - 42
+    - 123
+    - 456
+    - 789
+    - 2024

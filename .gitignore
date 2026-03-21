@@ -1,0 +1,32 @@
+# Claude Code internal files (plans, memory, instructions)
+.claude/
+CLAUDE.md
+
+# Data — never commit raw data
+data/
+models/
+outputs/
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.pkl
+*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Env
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.DS_Store
