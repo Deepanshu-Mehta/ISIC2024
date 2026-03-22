@@ -1,6 +1,8 @@
 {
   "venvPath": "/Users/deepanshumehta/Documents/Ai/Projects/ISIC2024",
   "venv": "venv",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Darwin",
   "include": ["src", "tests"],
   "extraPaths": ["src"]
 }

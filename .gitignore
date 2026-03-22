@@ -2,11 +2,12 @@
 .claude/
 CLAUDE.md
 
-# Data — never commit raw data
+# Data / artifacts — never commit raw data or trained model files
 data/
-models/
+/models/
 outputs/
 results/
+catboost_info/
 
 # Python
 __pycache__/
