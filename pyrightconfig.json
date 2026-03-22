@@ -1,0 +1,6 @@
+{
+  "venvPath": "/Users/deepanshumehta/Documents/Ai/Projects/ISIC2024",
+  "venv": "venv",
+  "include": ["src", "tests"],
+  "extraPaths": ["src"]
+}

@@ -111,11 +111,11 @@ def synthetic_df() -> pd.DataFrame:
             "lesion_id": lesion_id,
             # Leakage columns — only non-null for confirmed malignant
             "mel_thick_mm": np.where(target == 1, rng.uniform(0.5, 3.0, n), np.nan),
-            "mel_mitotic_index": np.where(target == 1, rng.choice(["0/mm^2", "<1/mm^2", "1/mm^2"], n), np.nan),
-            "iddx_full": np.where(
-                target == 1, "Melanoma Invasive", np.nan
+            "mel_mitotic_index": np.where(
+                target == 1, rng.choice(["0/mm^2", "<1/mm^2", "1/mm^2"], n), None
             ),
-            "iddx_1": np.where(target == 1, "Melanoma", np.nan),
+            "iddx_full": np.where(target == 1, "Melanoma Invasive", None),
+            "iddx_1": np.where(target == 1, "Melanoma", None),
             "iddx_2": np.full(n, np.nan),
             **tbp_cols,
         }
