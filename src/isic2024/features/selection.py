@@ -16,7 +16,10 @@ from loguru import logger
 from isic2024.config import FeaturesConfig
 
 # Columns excluded from feature selection regardless of dtype.
-_NON_FEATURE_COLS: frozenset[str] = frozenset({"patient_id", "target"})
+# has_lesion_id is excluded because lesion_id is absent from the test set
+# (test lesions are unbiopsied), so has_lesion_id=0 for every test row —
+# making it useless for inference despite being a near-perfect train predictor.
+_NON_FEATURE_COLS: frozenset[str] = frozenset({"patient_id", "target", "has_lesion_id"})
 
 
 class FeatureSelector:

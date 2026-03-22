@@ -63,7 +63,8 @@ class LGBMConfig:
     learning_rate: float = 0.05
     num_leaves: int = 63
     max_depth: int = 6
-    min_child_samples: int = 80
+    min_child_samples: int = 1          # disabled — use weight-based constraint below
+    min_sum_hessian_in_leaf: float = 10.0  # weight-based (equiv. to XGB min_child_weight)
     feature_fraction: float = 0.8
     bagging_fraction: float = 0.8
     bagging_freq: int = 1

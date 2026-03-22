@@ -97,6 +97,10 @@ class LGBMWrapper(BaseModel):
             num_leaves=cfg.num_leaves,
             max_depth=cfg.max_depth,
             min_child_samples=cfg.min_child_samples,
+            # Weight-based leaf constraint (equiv. to XGB min_child_weight).
+            # With scale_pos_weight=100, 1 positive sample contributes ~50 hessian
+            # weight → satisfies min_child_weight=10, enabling fine-grained splits.
+            min_child_weight=cfg.min_sum_hessian_in_leaf,
             feature_fraction=cfg.feature_fraction,
             bagging_fraction=cfg.bagging_fraction,
             bagging_freq=cfg.bagging_freq,
