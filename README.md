@@ -82,7 +82,7 @@ pip install -e .
 ## Usage
 
 ```bash
-# Run tests (124 tests)
+# Run tests (128 tests)
 python -m pytest tests/ -v --tb=short
 
 # Lint / format
@@ -127,9 +127,14 @@ src/isic2024/
 │   ├── ensemble.py        # Rank-averaging ensemble
 │   └── calibration.py     # Isotonic (primary) / Platt / Temperature calibration
 ├── evaluation/
-│   └── metrics.py         # pAUC (exact competition impl), ECE, Brier
+│   ├── metrics.py         # pAUC (exact competition impl), ECE, Brier
+│   └── plots.py           # ROC curves, score distributions, reliability diagrams, feature importance
 └── train.py               # End-to-end: load → features → CV → ensemble → save
 configs/base.yaml           # All hyperparameters
-tests/                      # 124 tests (pytest)
-notebooks/                  # EDA and analysis notebooks
+tests/                      # 128 tests (pytest)
+notebooks/
+├── 01_eda.ipynb            # Leakage audit, AI scores, ugly duckling motivation
+├── 02_feature_exploration.ipynb  # Pipeline validation, correlation threshold sensitivity
+├── 03_model_comparison.ipynb     # pAUC bar chart, ROC curves, score distributions, feature importance
+└── 04_calibration_analysis.ipynb # Reliability diagrams, ECE/Brier table, pAUC preservation
 ```
