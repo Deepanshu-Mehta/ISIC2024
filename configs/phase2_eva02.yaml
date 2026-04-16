@@ -8,7 +8,7 @@ data:
 
 image:
   hdf5_path: data/raw/isic-2024-challenge/train-image.hdf5
-  size: 224
+  size: 336
   normalize_mean: [0.485, 0.456, 0.406]
   normalize_std: [0.229, 0.224, 0.225]
 
@@ -56,10 +56,10 @@ optimizer:
 
 train:
   epochs: 25
-  batch_size: 48
+  batch_size: 24
   num_workers: 4
   precision: "16-mixed"
-  accumulate_grad_batches: 1
+  accumulate_grad_batches: 2
   patience: 3
   save_top_k: 3
   fast_dev_run: false
