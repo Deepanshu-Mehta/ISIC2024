@@ -3,11 +3,19 @@
 CLAUDE.md
 
 # Data / artifacts — never commit raw data or trained model files
-data/
+/data/
 /models/
-outputs/
-results/
+/outputs/
+/results/
 catboost_info/
+
+# Model checkpoints
+*.ckpt
+*.pt
+*.pth
+
+# W&B
+/wandb/
 
 # Python
 __pycache__/
@@ -32,3 +40,6 @@ venv/
 .vscode/
 .idea/
 *.DS_Store
+
+# Logs
+*.log
