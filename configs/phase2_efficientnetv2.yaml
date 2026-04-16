@@ -1,0 +1,73 @@
+seed: 42
+
+data:
+  raw_dir: data/raw/isic-2024-challenge
+  train_file: train-metadata.csv
+  target_col: target
+  patient_col: patient_id
+
+image:
+  hdf5_path: data/raw/isic-2024-challenge/train-image.hdf5
+  size: 224
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std: [0.229, 0.224, 0.225]
+
+augment:
+  hflip_p: 0.5
+  vflip_p: 0.5
+  rotate90_p: 0.5
+  transpose_p: 0.5
+  color_jitter_p: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  saturation_limit: 0.2
+  hue_limit: 0.1
+  gaussian_blur_p: 0.3
+  blur_limit: 7
+  coarse_dropout_p: 0.3
+  num_holes_max: 8
+  hole_height_max: 32
+  hole_width_max: 32
+
+sampler:
+  neg_pos_ratio: 50
+  replacement: true
+
+model:
+  backbone: tf_efficientnetv2_s.in21k_ft_in1k
+  pretrained: true
+  drop_rate: 0.3
+  num_classes: 1
+
+loss:
+  name: focal
+  gamma: 2.0
+  alpha: 0.25
+
+optimizer:
+  name: adamw
+  lr_backbone: 1.0e-4
+  lr_head: 1.0e-3
+  weight_decay: 1.0e-2
+  scheduler: onecycle
+  max_lr_backbone: 1.0e-4
+  max_lr_head: 1.0e-3
+  pct_start: 0.1           # short warmup — fine-tuning doesn't need long ramp
+
+train:
+  epochs: 25
+  batch_size: 64
+  num_workers: 4
+  precision: "16-mixed"
+  accumulate_grad_batches: 1
+  patience: 3               # aggressive early stopping with 25 max epochs
+  save_top_k: 3
+  fast_dev_run: false
+
+wandb:
+  project: isic2024-phase2
+  enabled: true
+
+cv:
+  n_splits: 5
+  seed: 42
