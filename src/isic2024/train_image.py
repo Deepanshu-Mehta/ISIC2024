@@ -15,15 +15,14 @@ import argparse
 import gc
 from pathlib import Path
 
+import lightning as L
 import numpy as np
 import pandas as pd
 import torch
-from loguru import logger
-from sklearn.model_selection import StratifiedGroupKFold
-
-import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
+from loguru import logger
+from sklearn.model_selection import StratifiedGroupKFold
 
 from isic2024.config_phase2 import Phase2Config
 from isic2024.data.augmentation import get_tta_transforms
@@ -84,7 +83,10 @@ def predict_tta(
 
     all_probs = []
     for tfm in tta_transforms:
-        ds = ISICImageDataset(val_df, cfg.image.hdf5_path, tfm, cfg.data.target_col)
+        ds = ISICImageDataset(
+            val_df, cfg.image.hdf5_path, tfm, cfg.data.target_col,
+            image_size=cfg.image.size,
+        )
         dl = torch.utils.data.DataLoader(
             ds,
             batch_size=cfg.train.batch_size * 2,

@@ -8,12 +8,11 @@ from typing import Any
 import albumentations as A
 import cv2
 import h5py
+import lightning as L
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
-
-import lightning as L
 
 from isic2024.config_phase2 import Phase2Config
 from isic2024.data.augmentation import get_train_transforms, get_val_transforms
@@ -33,11 +32,13 @@ class ISICImageDataset(Dataset):
         hdf5_path: str,
         transform: A.Compose,
         target_col: str = "target",
+        image_size: int = 224,
     ) -> None:
         self.isic_ids = df["isic_id"].values
         self.targets = df[target_col].values.astype(np.float32)
         self.hdf5_path = hdf5_path
         self.transform = transform
+        self.image_size = image_size
         self._hdf5_file: h5py.File | None = None
 
     def _open_hdf5(self) -> h5py.File:
@@ -61,7 +62,7 @@ class ISICImageDataset(Dataset):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         except Exception:
             warnings.warn(f"Failed to decode image {isic_id}, using black image")
-            image = np.zeros((224, 224, 3), dtype=np.uint8)
+            image = np.zeros((self.image_size, self.image_size, 3), dtype=np.uint8)
 
         augmented = self.transform(image=image)
         return {
@@ -106,9 +107,11 @@ class ISICDataModule(L.LightningDataModule):
         )
         self.train_dataset = ISICImageDataset(
             self.train_df, cfg.image.hdf5_path, train_tfm, cfg.data.target_col,
+            image_size=cfg.image.size,
         )
         self.val_dataset = ISICImageDataset(
             self.val_df, cfg.image.hdf5_path, val_tfm, cfg.data.target_col,
+            image_size=cfg.image.size,
         )
 
     def train_dataloader(self) -> DataLoader:
