@@ -60,7 +60,7 @@ train:
   num_workers: 4
   precision: "16-mixed"
   accumulate_grad_batches: 2
-  patience: 3
+  patience: 5
   save_top_k: 3
   fast_dev_run: false
 
