@@ -52,7 +52,9 @@ def load_and_merge(
     df = df_tab.merge(df_folds, on="isic_id", how="inner")
 
     # Phase 2 image predictions (one per backbone)
-    pred_col_map = dict(zip(BACKBONES, ["pred_effnet", "pred_eva02", "pred_convnext", "pred_swin"]))
+    pred_col_map = dict(
+        zip(BACKBONES, ["pred_effnet", "pred_eva02", "pred_convnext", "pred_swin"])
+    )
     for backbone in BACKBONES:
         oof_path = phase2_dir / backbone / "oof_image_predictions.csv"
         df_img = pd.read_csv(oof_path, usecols=["isic_id", "image_pred"])
@@ -140,7 +142,7 @@ def run_lgbm_stacker(
         "reg_lambda": 1.0,
         "scale_pos_weight": 100,
         "verbose": -1,
-        "n_jobs": -1,
+        "n_jobs": 1,
     }
 
     for k in sorted(df["fold"].unique()):
