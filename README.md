@@ -139,15 +139,31 @@ Each backbone saves to `outputs/phase2/<backbone>/` (gitignored):
 
 ---
 
-## Phase 3: Stacking (Planned)
+## Phase 3: Stacking Meta-Learner
 
-Stack tabular OOF + image OOF(s) through a GBDT meta-learner. Same CV folds ensure leak-free alignment.
+Stacks Phase 1 tabular + Phase 2 image OOF predictions (5 rank-transformed features) through multiple meta-learners. Same CV folds ensure leak-free alignment.
 
 ```
-Phase 1 OOF (tabular, pAUC=0.1672)  ─┐
-Phase 2 OOF (EfficientNetV2-S)       ├──→ GBDT Meta-Learner → Final pAUC
-Phase 2 OOF (EVA02-Small)            │
-Phase 2 OOF (ConvNeXtV2-B)          ─┘
+Phase 1 OOF (tabular, pAUC=0.1653)  ─┐
+Phase 2 OOF (EfficientNetV2-S)       │
+Phase 2 OOF (EVA02-Small)            ├──→ Rank Transform → Meta-Learner → Final pAUC
+Phase 2 OOF (ConvNeXtV2-B)           │
+Phase 2 OOF (SwinV2-B)              ─┘
+```
+
+### Stacking Results
+
+| Method | pAUC | Notes |
+|--------|------|-------|
+| Rank ensemble (equal weights) | 0.1708 | Zero overfitting risk |
+| Rank ensemble (pAUC-weighted) | 0.1715 | Weights by individual pAUC |
+| **LogReg stacker** | **0.1745** | `class_weight='balanced'`, 5-fold CV |
+| LightGBM stacker | 0.1645 | Conservative params, 3-seed avg — slight overfit |
+
+**Best stacking method: LogReg at pAUC=0.1745** (+5.6% over best individual tabular model at 0.1653)
+
+```bash
+python -m isic2024.train_stacking --output-dir outputs/phase3
 ```
 
 ---
@@ -197,6 +213,7 @@ src/isic2024/
 ├── config_phase2.py       # Phase 2 config dataclasses
 ├── train.py               # Phase 1: load → features → CV → ensemble → save
 ├── train_image.py         # Phase 2: image training with Lightning + TTA
+├── train_stacking.py      # Phase 3: stacking meta-learner (tabular + image OOFs)
 ├── data/
 │   ├── loader.py          # CSV loading + column validation
 │   ├── preprocess.py      # Imputation, encoding, leakage removal
