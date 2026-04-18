@@ -95,20 +95,20 @@ Fine-tuned pretrained backbones (via [timm](https://github.com/huggingface/pytor
 |-------|--------|------------|----------|---------|-----|------|
 | EfficientNetV2-S | 20M | 224 | 0.1399 | 0.9239 | T4 | ~4hrs |
 | EVA02-Small | 22M | 336 | 0.1403 | 0.9220 | T4 | ~10hrs |
-| **ConvNeXtV2-B** | **88M** | **224** | **0.1464** | **0.9286** | **L40S** | **~4hrs** |
-| SwinV2-B | 88M | 256 | — | — | — | Pending |
+| ConvNeXtV2-B | 88M | 224 | 0.1464 | 0.9286 | L40S | ~4hrs |
+| **SwinV2-B** | **87M** | **256** | **0.1549** | **0.9388** | **L40S** | — |
 
-**Best image model: ConvNeXtV2-B at pAUC=0.1464**
+**Best image model: SwinV2-B at pAUC=0.1549**
 
 ### Per-Fold Breakdown
 
-| Fold | EfficientNetV2-S | EVA02-Small | ConvNeXtV2-B |
-|------|-----------------|-------------|-------------|
-| 0 | 0.1383 | 0.1502 | 0.1519 |
-| 1 | 0.1528 | 0.1557 | 0.1513 |
-| 2 | 0.1551 | 0.1704 | 0.1705 |
-| 3 | 0.1106 | 0.1321 | 0.1334 |
-| 4 | 0.1671 | 0.1669 | 0.1668 |
+| Fold | EfficientNetV2-S | EVA02-Small | ConvNeXtV2-B | SwinV2-B |
+|------|-----------------|-------------|-------------|----------|
+| 0 | 0.1383 | 0.1502 | 0.1519 | 0.1529 |
+| 1 | 0.1528 | 0.1557 | 0.1513 | 0.1650 |
+| 2 | 0.1551 | 0.1704 | 0.1705 | 0.1807 |
+| 3 | 0.1106 | 0.1321 | 0.1334 | 0.1368 |
+| 4 | 0.1671 | 0.1669 | 0.1668 | 0.1668 |
 
 > Fold 3 is consistently the hardest across all models and phases, suggesting genuinely difficult cases in that patient split.
 
