@@ -50,9 +50,9 @@
   urlcolor=urlblue,
 }
 
-\newcommand{\pauc}{\text{pAUC}}
-\newcommand{\tpr}{\text{TPR}}
-\newcommand{\fpr}{\text{FPR}}
+\newcommand{\pauc}{\operatorname{pAUC}}
+\newcommand{\tpr}{\operatorname{TPR}}
+\newcommand{\fpr}{\operatorname{FPR}}
 
 %% =============================================================
 \begin{document}
@@ -610,6 +610,18 @@ This exploits the fact that lesion orientation is arbitrary in
 dermoscopy, and averaging reduces prediction variance without
 requiring retraining.
 
+Fig.~\ref{fig:augmentation} shows the 8 D4 transforms applied to a
+real lesion image from the training set.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/augmentation_demo.png}
+  \caption{D4 symmetry group applied to a real lesion from the training
+           set. All 8 transforms (4 rotations $\times$ 2 reflections) are
+           averaged at test time via TTA (Eq.~\ref{eq:tta}).}
+  \label{fig:augmentation}
+\end{figure}
+
 \subsection{Image Data Pipeline}
 
 Images are stored as JPEG-compressed byte arrays in HDF5, decoded
@@ -783,10 +795,11 @@ Table~\ref{tab:phase1_summary} summarises all Phase~1 systems.
     \midrule
     GBDT Ensemble         & $0.1653$ & 0.956 & 0.299$^\dagger$ & 0.499$^\dagger$ \\
     \textbf{Ens.\ + Isotonic} & $\mathbf{0.1672}$ & 0.958 & \textbf{0.000907} & $\approx 0$ \\
-    \midrule
-    \multicolumn{5}{l}{\footnotesize $^\dagger$ Rank-percentile outputs are not calibrated probabilities; Brier/ECE are meaningless before calibration.} \\
     \bottomrule
   \end{tabular}
+
+  \vspace{2pt}
+  {\footnotesize $^\dagger$ Rank-percentile outputs are not calibrated probabilities; Brier/ECE are meaningless before calibration.}
 \end{table*}
 
 \subsection{Phase~1: Calibration Analysis}
@@ -900,25 +913,23 @@ backbones.
   \label{fig:phase2_roc}
 \end{figure}
 
-%% --- Placeholder for W&B training curves ---
-% TODO: Add W&B training curve figures when available
-% \begin{figure}[!t]
-%   \centering
-%   \includegraphics[width=\columnwidth]{figures/wandb_val_loss.png}
-%   \caption{Validation loss across epochs for all four backbones (fold~0).
-%            Early stopping triggers at epoch $\sim$8--12, confirming
-%            convergence without overfitting.}
-%   \label{fig:val_loss}
-% \end{figure}
-%
-% \begin{figure}[!t]
-%   \centering
-%   \includegraphics[width=\columnwidth]{figures/wandb_train_val_loss.png}
-%   \caption{Training vs.\ validation loss for SwinV2-B (fold~0).
-%            The small train--val gap confirms that focal loss + weighted
-%            sampling effectively regularise the model.}
-%   \label{fig:train_val_gap}
-% \end{figure}
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/wandb_val_loss_clean.png}
+  \caption{SwinV2-B validation loss (focal) across training steps
+           (data from Weights \& Biases).
+           Minimum at step $\sim$1.8K; subsequent rise triggers early
+           stopping. Shaded region indicates overfitting zone.}
+  \label{fig:val_loss}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/wandb_train_loss_clean.png}
+  \caption{SwinV2-B training loss decreases monotonically from 0.013
+           to 0.004, confirming the model is learning without memorisation.}
+  \label{fig:train_loss}
+\end{figure}
 
 \subsection{Phase~3: Stacking Results}
 
@@ -966,6 +977,29 @@ three phases.
            the Phase~1 target (0.16). The LogReg stacker (Phase~3)
            achieves the best overall pAUC of 0.1745.}
   \label{fig:pauc_all}
+\end{figure}
+
+Fig.~\ref{fig:stacking_waterfall} visualises the progression from
+individual models to the stacked ensemble.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/stacking_waterfall.png}
+  \caption{Individual model pAUC vs.\ LogReg stacker. Image models
+           individually underperform the tabular baseline, but stacking
+           all five sources yields a +5.6\% improvement.}
+  \label{fig:stacking_waterfall}
+\end{figure}
+
+Fig.~\ref{fig:stacking_comparison} compares all four stacking methods.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/stacking_comparison.pdf}
+  \caption{Phase~3 stacking method comparison. LogReg outperforms both
+           rank ensembles and the LightGBM stacker, which overfits with
+           only 393 positive samples.}
+  \label{fig:stacking_comparison}
 \end{figure}
 
 \subsection{Cross-Phase Comparison}

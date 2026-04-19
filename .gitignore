@@ -43,3 +43,14 @@ venv/
 
 # Logs
 *.log
+
+# Report generation scripts and PPT artifacts
+report/create_ppt.py
+report/generate_ppt_figures.py
+report/*.pptx
+report/figures/phase2_pauc_bar.png
+report/figures/phase2_roc_curves.png
+report/figures/stacking_comparison.png
+
+# Playwright
+.playwright-mcp/
