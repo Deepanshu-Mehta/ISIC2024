@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import pickle
 from pathlib import Path
 
 import lightning as L
@@ -23,12 +24,84 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.preprocessing import StandardScaler
 
 from isic2024.config_phase2 import Phase2Config
 from isic2024.data.augmentation import get_tta_transforms
 from isic2024.data.image_dataset import ISICDataModule, ISICImageDataset, _worker_init_fn
 from isic2024.evaluation.metrics import compute_metrics
 from isic2024.models.image_module import ISICImageModule
+
+# Fixed categorical mappings — must be consistent across train/val/test splits.
+# Derived from the full ISIC 2024 training set; -1 = missing/unknown.
+_CAT_MAPS: dict[str, dict[str, int]] = {
+    "sex": {"male": 0, "female": 1},
+    "anatom_site_general": {
+        "anterior torso": 0, "head/neck": 1, "lower extremity": 2,
+        "posterior torso": 3, "upper extremity": 4,
+    },
+    "tbp_tile_type": {"3D: white": 0, "3D: XP": 1},
+}
+
+
+def prepare_tabular(
+    df: pd.DataFrame,
+    features: list[str],
+    scaler: StandardScaler | None = None,
+) -> tuple[np.ndarray, StandardScaler]:
+    """Extract, impute, and scale tabular features for one data split.
+
+    Handles:
+      - String categoricals (sex, anatom_site_general, tbp_tile_type) via integer encoding
+      - n_lesions_patient: computed inline from patient_id if not present
+      - Missing columns: zero-filled with a warning
+
+    Args:
+        df: DataFrame containing the raw metadata columns.
+        features: Ordered list of column names to use.
+        scaler: Pre-fit StandardScaler (for val/test). If None, fits a new one.
+
+    Returns:
+        (matrix, scaler) where matrix is float32 (N, len(features)).
+    """
+    df = df.copy()
+
+    # Compute n_lesions_patient inline if needed (ugly-duckling patient context)
+    if "n_lesions_patient" in features and "n_lesions_patient" not in df.columns:
+        if "patient_id" in df.columns:
+            counts = df.groupby("patient_id")["patient_id"].transform("count")
+            df["n_lesions_patient"] = counts.astype(np.float32)
+        else:
+            df["n_lesions_patient"] = 1.0
+
+    # Encode string categoricals with fixed mappings (consistent across splits).
+    # Using dynamic pd.Categorical codes would assign different integers if a
+    # category is absent from a split, breaking the StandardScaler alignment.
+    for col, mapping in _CAT_MAPS.items():
+        if col in df.columns and pd.api.types.is_string_dtype(df[col]):
+            df[col] = df[col].map(mapping).fillna(-1).astype(np.float32)
+
+    # Build feature matrix (zero-fill any missing columns)
+    missing = [f for f in features if f not in df.columns]
+    if missing:
+        logger.warning(
+            f"Tabular conditioning: {len(missing)} features not found, zero-filled: {missing}"
+        )
+
+    matrix = np.zeros((len(df), len(features)), dtype=np.float32)
+    for i, feat in enumerate(features):
+        if feat in df.columns:
+            col_vals = pd.to_numeric(df[feat], errors="coerce").values.astype(np.float32)
+            col_vals = np.nan_to_num(col_vals, nan=0.0)
+            matrix[:, i] = col_vals
+
+    if scaler is None:
+        scaler = StandardScaler()
+        matrix = scaler.fit_transform(matrix).astype(np.float32)
+    else:
+        matrix = scaler.transform(matrix).astype(np.float32)
+
+    return matrix, scaler
 
 
 def create_folds(
@@ -74,6 +147,7 @@ def predict_tta(
     val_df: pd.DataFrame,
     cfg: Phase2Config,
     trainer: L.Trainer,
+    val_tabular: np.ndarray | None = None,
 ) -> np.ndarray:
     """Run TTA with 8 D4 transforms, average sigmoid probabilities."""
     tta_transforms = get_tta_transforms(
@@ -85,7 +159,7 @@ def predict_tta(
     for tfm in tta_transforms:
         ds = ISICImageDataset(
             val_df, cfg.image.hdf5_path, tfm, cfg.data.target_col,
-            image_size=cfg.image.size,
+            image_size=cfg.image.size, tabular_matrix=val_tabular,
         )
         dl = torch.utils.data.DataLoader(
             ds,
@@ -117,8 +191,18 @@ def train_fold(
     train_df = df.iloc[train_idx].reset_index(drop=True)
     val_df = df.iloc[val_idx].reset_index(drop=True)
 
+    # Tabular conditioning: preprocess features per fold (no leakage)
+    train_tabular, val_tabular = None, None
+    if cfg.tabular.enabled:
+        train_tabular, fold_scaler = prepare_tabular(train_df, cfg.tabular.features)
+        val_tabular, _ = prepare_tabular(val_df, cfg.tabular.features, scaler=fold_scaler)
+        logger.info(
+            f"Tabular conditioning: {len(cfg.tabular.features)} features, "
+            f"train shape {train_tabular.shape}"
+        )
+
     # DataModule
-    dm = ISICDataModule(cfg, train_df, val_df)
+    dm = ISICDataModule(cfg, train_df, val_df, train_tabular, val_tabular)
 
     # Model
     model = ISICImageModule(cfg)
@@ -184,7 +268,7 @@ def train_fold(
             enable_progress_bar=True,
             logger=False,
         )
-        oof_preds = predict_tta(model, val_df, cfg, predict_trainer)
+        oof_preds = predict_tta(model, val_df, cfg, predict_trainer, val_tabular)
 
         y_val = val_df[cfg.data.target_col].values
         metrics = compute_metrics(y_val, oof_preds)
@@ -230,6 +314,14 @@ def main() -> None:
     # Load metadata
     df = pd.read_csv(cfg.data.train_path)
     logger.info(f"Loaded {len(df):,} samples, {df[cfg.data.target_col].sum():.0f} positives")
+
+    # Save full-data tabular scaler for inference (fit on all training rows)
+    if cfg.tabular.enabled:
+        _, full_scaler = prepare_tabular(df, cfg.tabular.features)
+        scaler_path = output_dir / "tabular_scaler.pkl"
+        with open(scaler_path, "wb") as fh:
+            pickle.dump({"scaler": full_scaler, "features": cfg.tabular.features}, fh)
+        logger.info(f"Full-data tabular scaler saved → {scaler_path}")
 
     # Create folds
     folds = create_folds(df, cfg)

@@ -55,6 +55,37 @@ class ModelConfig:
 
 
 @dataclass
+class TabularCondConfig:
+    """Optional tabular conditioning for the image model.
+
+    When enabled, 20 curated clinical features are embedded through a small
+    MLP and concatenated with the backbone image features before the head.
+    This creates genuine cross-modal interaction (Hybrid Innovation score 5).
+    """
+
+    enabled: bool = False
+    features: list = field(default_factory=lambda: [
+        # Demographics & anatomy
+        "age_approx", "sex", "anatom_site_general",
+        # Color channels (TBP system measurements)
+        "tbp_lv_A", "tbp_lv_Aext", "tbp_lv_B", "tbp_lv_H", "tbp_lv_Hext", "tbp_lv_L",
+        # Color differences (ABCD criteria: color variation)
+        "tbp_lv_deltaA", "tbp_lv_deltaB", "tbp_lv_deltaLBnorm", "tbp_lv_Cext",
+        # Shape & structure (ABCD criteria: border/asymmetry)
+        "tbp_lv_area_perim_ratio", "tbp_lv_symm_2axis", "tbp_lv_stdL",
+        # Model confidence scores from ISIC system
+        "tbp_lv_nevi_confidence", "tbp_lv_dnn_lesion_confidence",
+        # Patient-level context (ugly duckling)
+        "n_lesions_patient",
+        # Spatial location
+        "tbp_lv_y",
+    ])
+    embed_dim: int = 64     # output dimension of tabular MLP
+    hidden_dim: int = 128   # hidden layer of tabular MLP
+    dropout: float = 0.1
+
+
+@dataclass
 class LossConfig:
     name: str = "focal"
     gamma: float = 2.0
@@ -112,6 +143,7 @@ class Phase2Config:
     augment: AugmentConfig = field(default_factory=AugmentConfig)
     sampler: SamplerConfig = field(default_factory=SamplerConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    tabular: TabularCondConfig = field(default_factory=TabularCondConfig)
     loss: LossConfig = field(default_factory=LossConfig)
     optimizer: OptimizerConfig = field(default_factory=OptimizerConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
@@ -134,6 +166,16 @@ class Phase2Config:
                         filtered[key] = tuple(filtered[key])
             return dc_cls(**filtered)
 
+        # TabularCondConfig has a list field — build it directly
+        tab_raw = raw.get("tabular", {})
+        tabular_cfg = TabularCondConfig(
+            enabled=tab_raw.get("enabled", False),
+            features=tab_raw.get("features", TabularCondConfig().features),
+            embed_dim=tab_raw.get("embed_dim", 64),
+            hidden_dim=tab_raw.get("hidden_dim", 128),
+            dropout=tab_raw.get("dropout", 0.1),
+        )
+
         return cls(
             seed=raw.get("seed", 42),
             data=_build(DataConfig, raw.get("data", {})),
@@ -141,6 +183,7 @@ class Phase2Config:
             augment=_build(AugmentConfig, raw.get("augment", {})),
             sampler=_build(SamplerConfig, raw.get("sampler", {})),
             model=_build(ModelConfig, raw.get("model", {})),
+            tabular=tabular_cfg,
             loss=_build(LossConfig, raw.get("loss", {})),
             optimizer=_build(OptimizerConfig, raw.get("optimizer", {})),
             train=_build(TrainConfig, raw.get("train", {})),

@@ -1,12 +1,25 @@
-"""Lightning module for ISIC image classification (Phase 2)."""
+"""Lightning module for ISIC image classification (Phase 2).
+
+Supports optional tabular conditioning: clinical features are embedded through
+a small MLP and concatenated with backbone image features before the head.
+This creates genuine cross-modal learning — the backbone learns visual patterns
+conditioned on patient demographics and clinical measurements.
+
+Architecture (tabular conditioning enabled):
+
+    image  → backbone → pool →  [feat_dim]
+                                      ↓  concat
+    tabular (20 feats) → MLP  →  [embed_dim]
+                                      ↓
+                           Dropout → Linear(1)
+"""
 from __future__ import annotations
 
+import lightning as L
 import numpy as np
 import timm
 import torch
 import torch.nn as nn
-
-import lightning as L
 
 from isic2024.config_phase2 import Phase2Config
 from isic2024.evaluation.metrics import compute_metrics
@@ -14,7 +27,7 @@ from isic2024.models.losses import loss_factory
 
 
 class ISICImageModule(L.LightningModule):
-    """EfficientNet-based binary classifier for skin lesion images."""
+    """timm backbone binary classifier with optional tabular conditioning."""
 
     def __init__(self, cfg: Phase2Config) -> None:
         super().__init__()
@@ -29,10 +42,27 @@ class ISICImageModule(L.LightningModule):
         )
         feat_dim = self.backbone.num_features
 
+        # Optional tabular embedding MLP
+        self.use_tabular = cfg.tabular.enabled
+        head_in_dim = feat_dim
+        if self.use_tabular:
+            tab_cfg = cfg.tabular
+            tabular_dim = len(tab_cfg.features)
+            self.tab_embed = nn.Sequential(
+                nn.Linear(tabular_dim, tab_cfg.hidden_dim),
+                nn.LayerNorm(tab_cfg.hidden_dim),
+                nn.GELU(),
+                nn.Dropout(p=tab_cfg.dropout),
+                nn.Linear(tab_cfg.hidden_dim, tab_cfg.embed_dim),
+                nn.LayerNorm(tab_cfg.embed_dim),
+                nn.GELU(),
+            )
+            head_in_dim = feat_dim + tab_cfg.embed_dim
+
         # Classification head
         self.head = nn.Sequential(
             nn.Dropout(p=cfg.model.drop_rate),
-            nn.Linear(feat_dim, 1),
+            nn.Linear(head_in_dim, 1),
         )
 
         self.loss_fn = loss_factory(cfg.loss)
@@ -41,18 +71,21 @@ class ISICImageModule(L.LightningModule):
         self._val_preds: list[torch.Tensor] = []
         self._val_targets: list[torch.Tensor] = []
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, tabular: torch.Tensor | None = None) -> torch.Tensor:
         features = self.backbone(x)
+        if self.use_tabular and tabular is not None:
+            tab_embed = self.tab_embed(tabular)
+            features = torch.cat([features, tab_embed], dim=-1)
         return self.head(features).squeeze(-1)
 
     def training_step(self, batch: dict, batch_idx: int) -> torch.Tensor:
-        logits = self(batch["image"])
+        logits = self(batch["image"], batch.get("tabular"))
         loss = self.loss_fn(logits, batch["target"])
         self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch: dict, batch_idx: int) -> None:
-        logits = self(batch["image"])
+        logits = self(batch["image"], batch.get("tabular"))
         loss = self.loss_fn(logits, batch["target"])
         self.log("val/loss", loss, on_epoch=True, prog_bar=True)
         self._val_preds.append(logits.detach().cpu())
@@ -78,14 +111,16 @@ class ISICImageModule(L.LightningModule):
         self.log("val/brier", metrics["brier"])
 
     def predict_step(self, batch: dict, batch_idx: int) -> torch.Tensor:
-        return self(batch["image"]).detach().cpu()
+        return self(batch["image"], batch.get("tabular")).detach().cpu()
 
     def configure_optimizers(self) -> dict:
         cfg = self.cfg.optimizer
 
-        # Differential learning rates: backbone vs head
+        # Differential learning rates: backbone vs head (+ tabular embed)
         backbone_params = list(self.backbone.parameters())
         head_params = list(self.head.parameters())
+        if self.use_tabular:
+            head_params += list(self.tab_embed.parameters())
 
         optimizer = torch.optim.AdamW(
             [

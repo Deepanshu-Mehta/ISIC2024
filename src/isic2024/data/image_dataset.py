@@ -24,6 +24,11 @@ class ISICImageDataset(Dataset):
     """Loads JPEG images from HDF5, decodes on the fly, applies albumentations.
 
     HDF5 file is opened lazily per worker to avoid fork-safety issues.
+
+    Args:
+        tabular_matrix: Optional float32 array of shape (N, tabular_dim).
+            When provided, each item includes a ``"tabular"`` key for
+            conditioning the image model on clinical features.
     """
 
     def __init__(
@@ -33,12 +38,14 @@ class ISICImageDataset(Dataset):
         transform: A.Compose,
         target_col: str = "target",
         image_size: int = 224,
+        tabular_matrix: np.ndarray | None = None,
     ) -> None:
         self.isic_ids = df["isic_id"].values
         self.targets = df[target_col].values.astype(np.float32)
         self.hdf5_path = hdf5_path
         self.transform = transform
         self.image_size = image_size
+        self.tabular_matrix = tabular_matrix  # (N, tabular_dim) float32 or None
         self._hdf5_file: h5py.File | None = None
 
     def _open_hdf5(self) -> h5py.File:
@@ -65,11 +72,14 @@ class ISICImageDataset(Dataset):
             image = np.zeros((self.image_size, self.image_size, 3), dtype=np.uint8)
 
         augmented = self.transform(image=image)
-        return {
+        item: dict = {
             "image": augmented["image"],
             "target": torch.tensor(target, dtype=torch.float32),
             "isic_id": isic_id,
         }
+        if self.tabular_matrix is not None:
+            item["tabular"] = torch.tensor(self.tabular_matrix[idx], dtype=torch.float32)
+        return item
 
 
 def _worker_init_fn(worker_id: int) -> None:
@@ -82,18 +92,29 @@ def _worker_init_fn(worker_id: int) -> None:
 
 
 class ISICDataModule(L.LightningDataModule):
-    """Lightning DataModule for ISIC image classification."""
+    """Lightning DataModule for ISIC image classification.
+
+    Args:
+        train_tabular: Optional float32 array (N_train, tabular_dim) for
+            tabular conditioning. Must align row-for-row with train_df.
+        val_tabular: Optional float32 array (N_val, tabular_dim) for
+            tabular conditioning. Must align row-for-row with val_df.
+    """
 
     def __init__(
         self,
         cfg: Phase2Config,
         train_df: pd.DataFrame,
         val_df: pd.DataFrame,
+        train_tabular: np.ndarray | None = None,
+        val_tabular: np.ndarray | None = None,
     ) -> None:
         super().__init__()
         self.cfg = cfg
         self.train_df = train_df
         self.val_df = val_df
+        self.train_tabular = train_tabular
+        self.val_tabular = val_tabular
 
     def setup(self, stage: str | None = None) -> None:
         cfg = self.cfg
@@ -107,11 +128,11 @@ class ISICDataModule(L.LightningDataModule):
         )
         self.train_dataset = ISICImageDataset(
             self.train_df, cfg.image.hdf5_path, train_tfm, cfg.data.target_col,
-            image_size=cfg.image.size,
+            image_size=cfg.image.size, tabular_matrix=self.train_tabular,
         )
         self.val_dataset = ISICImageDataset(
             self.val_df, cfg.image.hdf5_path, val_tfm, cfg.data.target_col,
-            image_size=cfg.image.size,
+            image_size=cfg.image.size, tabular_matrix=self.val_tabular,
         )
 
     def train_dataloader(self) -> DataLoader:
