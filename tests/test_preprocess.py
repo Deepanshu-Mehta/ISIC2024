@@ -1,4 +1,5 @@
 """Tests for src/isic2024/data/preprocess.py."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -11,6 +12,7 @@ from isic2024.data.preprocess import _LEAKAGE_REGEX, Preprocessor
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_preprocessor(base_config) -> Preprocessor:
     return Preprocessor(base_config.data)
 
@@ -18,6 +20,7 @@ def make_preprocessor(base_config) -> Preprocessor:
 # ---------------------------------------------------------------------------
 # Leakage column removal
 # ---------------------------------------------------------------------------
+
 
 def test_leakage_cols_removed(synthetic_df: pd.DataFrame, base_config) -> None:
     """mel_thick_mm, mel_mitotic_index must be absent after preprocessing."""
@@ -55,6 +58,7 @@ def test_isic_id_removed(synthetic_df: pd.DataFrame, base_config) -> None:
 # Kept columns (EDA-verified signal)
 # ---------------------------------------------------------------------------
 
+
 def test_attribution_kept(synthetic_df: pd.DataFrame, base_config) -> None:
     """attribution (hospital source) must be kept — 7.8× malignancy variation."""
     prep = make_preprocessor(base_config)
@@ -81,6 +85,7 @@ def test_target_preserved(synthetic_df: pd.DataFrame, base_config) -> None:
 # has_lesion_id indicator
 # ---------------------------------------------------------------------------
 
+
 def test_has_lesion_id_created(synthetic_df: pd.DataFrame, base_config) -> None:
     """has_lesion_id binary indicator must be present after preprocessing."""
     prep = make_preprocessor(base_config)
@@ -103,9 +108,7 @@ def test_raw_lesion_id_dropped(synthetic_df: pd.DataFrame, base_config) -> None:
     assert "lesion_id" not in out.columns
 
 
-def test_malignant_all_have_has_lesion_id(
-    synthetic_df: pd.DataFrame, base_config
-) -> None:
+def test_malignant_all_have_has_lesion_id(synthetic_df: pd.DataFrame, base_config) -> None:
     """All malignant rows in synthetic data should have has_lesion_id=1."""
     prep = make_preprocessor(base_config)
     out = prep.fit_transform(synthetic_df)
@@ -116,6 +119,7 @@ def test_malignant_all_have_has_lesion_id(
 # ---------------------------------------------------------------------------
 # Imputation — no NaN after fit_transform
 # ---------------------------------------------------------------------------
+
 
 def test_no_nan_after_fit_transform(synthetic_df: pd.DataFrame, base_config) -> None:
     """No NaN values should remain in any column after fit_transform."""
@@ -138,6 +142,7 @@ def test_age_approx_imputed(synthetic_df: pd.DataFrame, base_config) -> None:
 # Missing indicators
 # ---------------------------------------------------------------------------
 
+
 def test_missing_indicator_created_for_high_missing(
     synthetic_df: pd.DataFrame, base_config
 ) -> None:
@@ -159,29 +164,27 @@ def test_missing_indicator_values(synthetic_df: pd.DataFrame, base_config) -> No
 # Label encoding
 # ---------------------------------------------------------------------------
 
+
 def test_patient_id_preserved(synthetic_df: pd.DataFrame, base_config) -> None:
-    """patient_id must survive preprocessing — required for StratifiedGroupKFold and ugly duckling."""
+    """patient_id must survive preprocessing (StratifiedGroupKFold + ugly duckling)."""
     prep = make_preprocessor(base_config)
     out = prep.fit_transform(synthetic_df)
     assert "patient_id" in out.columns
     assert (out["patient_id"] == synthetic_df["patient_id"]).all()
 
 
-def test_categoricals_are_integer_encoded(
-    synthetic_df: pd.DataFrame, base_config
-) -> None:
-    """sex, anatom_site_general, attribution, tbp_tile_type, tbp_lv_location_simple must be integer-encoded."""
+def test_categoricals_are_integer_encoded(synthetic_df: pd.DataFrame, base_config) -> None:
+    """All categorical columns must be integer-encoded."""
     prep = make_preprocessor(base_config)
     out = prep.fit_transform(synthetic_df)
-    for col in ["sex", "anatom_site_general", "attribution", "tbp_tile_type", "tbp_lv_location_simple"]:
+    cats = ["sex", "anatom_site_general", "attribution", "tbp_tile_type", "tbp_lv_location_simple"]
+    for col in cats:
         assert pd.api.types.is_integer_dtype(out[col]), (
             f"'{col}' should be integer after encoding, got {out[col].dtype}"
         )
 
 
-def test_unseen_category_encodes_to_minus_one(
-    synthetic_df: pd.DataFrame, base_config
-) -> None:
+def test_unseen_category_encodes_to_minus_one(synthetic_df: pd.DataFrame, base_config) -> None:
     """At transform time, unseen category values must encode to -1."""
     prep = make_preprocessor(base_config)
     prep.fit_transform(synthetic_df)
@@ -198,9 +201,8 @@ def test_unseen_category_encodes_to_minus_one(
 # fit/transform consistency (no data leakage)
 # ---------------------------------------------------------------------------
 
-def test_transform_reuses_fit_statistics(
-    synthetic_df: pd.DataFrame, base_config
-) -> None:
+
+def test_transform_reuses_fit_statistics(synthetic_df: pd.DataFrame, base_config) -> None:
     """transform() must use the same imputation values as fit_transform()."""
     train = synthetic_df.iloc[:80].copy()
     val = synthetic_df.iloc[80:].copy()
@@ -224,9 +226,7 @@ def test_transform_fails_before_fit(synthetic_df: pd.DataFrame, base_config) -> 
         prep.transform(synthetic_df)
 
 
-def test_fit_transform_does_not_mutate_input(
-    synthetic_df: pd.DataFrame, base_config
-) -> None:
+def test_fit_transform_does_not_mutate_input(synthetic_df: pd.DataFrame, base_config) -> None:
     """fit_transform must not modify the original DataFrame."""
     original_cols = list(synthetic_df.columns)
     original_shape = synthetic_df.shape

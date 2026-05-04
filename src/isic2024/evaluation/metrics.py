@@ -8,6 +8,7 @@ normalization and gives different numbers.
 Calibration metrics (ECE, Brier) do not affect pAUC (which is rank-based) but
 are useful for clinical interpretation and comparing calibration methods.
 """
+
 from __future__ import annotations
 
 import numpy as np

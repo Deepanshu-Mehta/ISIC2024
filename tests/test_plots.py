@@ -3,7 +3,9 @@
 All tests use the Agg backend (no display required) and verify that each
 plotting function returns a matplotlib Figure without errors.
 """
+
 import matplotlib
+
 matplotlib.use("Agg")
 
 import numpy as np
@@ -31,6 +33,7 @@ def test_plot_roc_curves_returns_figure(synthetic_binary):
     y_true, oof_dict = synthetic_binary
     fig = plot_roc_curves(y_true, oof_dict)
     import matplotlib.figure
+
     assert isinstance(fig, matplotlib.figure.Figure)
 
 
@@ -38,6 +41,7 @@ def test_plot_score_distributions_returns_figure(synthetic_binary):
     y_true, oof_dict = synthetic_binary
     fig = plot_score_distributions(y_true, oof_dict)
     import matplotlib.figure
+
     assert isinstance(fig, matplotlib.figure.Figure)
 
 
@@ -46,6 +50,7 @@ def test_plot_reliability_diagram_returns_figure(synthetic_binary):
     y_prob = oof_dict["ModelB"]
     fig = plot_reliability_diagram(y_true, y_prob, n_bins=10)
     import matplotlib.figure
+
     assert isinstance(fig, matplotlib.figure.Figure)
 
 
@@ -55,4 +60,5 @@ def test_plot_feature_importance_returns_figure():
     imps = rng.uniform(0, 1, size=50)
     fig = plot_feature_importance(names, imps, top_n=20)
     import matplotlib.figure
+
     assert isinstance(fig, matplotlib.figure.Figure)

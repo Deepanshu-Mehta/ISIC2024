@@ -7,6 +7,7 @@ Usage:
     from isic2024.features.engineering import build_features
     df_feat = build_features(df, config)
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -23,6 +24,7 @@ _EPS = 1e-8
 # Color features  (ABCDE: Color)
 # ---------------------------------------------------------------------------
 
+
 def compute_color_features(df: pd.DataFrame) -> pd.DataFrame:
     """Derive color-based features from LAB colour-space columns.
 
@@ -37,9 +39,7 @@ def compute_color_features(df: pd.DataFrame) -> pd.DataFrame:
     # Euclidean LAB distance between lesion and surrounding skin
     # Established dermatology metric for colour contrast
     df["delta_e"] = np.sqrt(
-        df["tbp_lv_deltaA"] ** 2
-        + df["tbp_lv_deltaB"] ** 2
-        + df["tbp_lv_deltaL"] ** 2
+        df["tbp_lv_deltaA"] ** 2 + df["tbp_lv_deltaB"] ** 2 + df["tbp_lv_deltaL"] ** 2
     )
 
     # Chroma = colourfulness (distance from grey axis in LAB)
@@ -53,14 +53,17 @@ def compute_color_features(df: pd.DataFrame) -> pd.DataFrame:
     # Hue difference between lesion centre and its periphery
     df["hue_diff"] = df["tbp_lv_H"] - df["tbp_lv_Hext"]
 
-    logger.debug("Color features added: delta_e, lesion_chroma, skin_chroma, "
-                 "delta_chroma, color_ratio_L, hue_diff")
+    logger.debug(
+        "Color features added: delta_e, lesion_chroma, skin_chroma, "
+        "delta_chroma, color_ratio_L, hue_diff"
+    )
     return df
 
 
 # ---------------------------------------------------------------------------
 # Shape features  (ABCDE: Asymmetry, Border, Diameter)
 # ---------------------------------------------------------------------------
+
 
 def compute_shape_features(df: pd.DataFrame) -> pd.DataFrame:
     """Derive shape-based features from area/perimeter columns.
@@ -73,15 +76,10 @@ def compute_shape_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Circularity: 1.0 = perfect circle, < 1 = irregular border
-    df["circularity"] = (
-        4 * np.pi * df["tbp_lv_areaMM2"]
-        / (df["tbp_lv_perimeterMM"] ** 2 + _EPS)
-    )
+    df["circularity"] = 4 * np.pi * df["tbp_lv_areaMM2"] / (df["tbp_lv_perimeterMM"] ** 2 + _EPS)
 
     # Border complexity: long perimeter relative to area = ragged border
-    df["border_complexity"] = df["tbp_lv_perimeterMM"] / (
-        np.sqrt(df["tbp_lv_areaMM2"]) + _EPS
-    )
+    df["border_complexity"] = df["tbp_lv_perimeterMM"] / (np.sqrt(df["tbp_lv_areaMM2"]) + _EPS)
 
     # Log-area: compresses the heavy right tail from large lesions
     df["log_area"] = np.log1p(df["tbp_lv_areaMM2"])
@@ -93,6 +91,7 @@ def compute_shape_features(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Interaction features  (clinically meaningful cross-terms)
 # ---------------------------------------------------------------------------
+
 
 def compute_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
     """Derive interaction terms motivated by EDA and clinical literature.
@@ -125,6 +124,7 @@ def compute_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
 # Location / count features  (ugly-duckling precursor)
 # ---------------------------------------------------------------------------
 
+
 def compute_location_features(df: pd.DataFrame) -> pd.DataFrame:
     """Derive patient-level and site-level lesion count features.
 
@@ -153,6 +153,7 @@ def compute_location_features(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Master builder
 # ---------------------------------------------------------------------------
+
 
 def build_features(df: pd.DataFrame, config: Config) -> pd.DataFrame:
     """Chain all feature groups and return the enriched DataFrame.
@@ -190,6 +191,7 @@ def build_features(df: pd.DataFrame, config: Config) -> pd.DataFrame:
         df = compute_location_features(df)
 
     n_added = len(df.columns) - n_start
-    logger.info(f"build_features: added {n_added} engineered features "
-                f"(total columns now {len(df.columns)})")
+    logger.info(
+        f"build_features: added {n_added} engineered features (total columns now {len(df.columns)})"
+    )
     return df

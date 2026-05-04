@@ -16,6 +16,7 @@ Usage::
     python -m isic2024.train                           # uses configs/base.yaml
     python -m isic2024.train --config path/to/cfg.yaml
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,10 +39,10 @@ from isic2024.models.ensemble import RankEnsemble
 from isic2024.models.gbdt import model_factory
 from isic2024.models.svm_baseline import SVMBaseline
 
-
 # ---------------------------------------------------------------------------
 # Trainer
 # ---------------------------------------------------------------------------
+
 
 class Trainer:
     """Orchestrates the full CV training loop.
@@ -133,17 +134,13 @@ class Trainer:
         )
 
         folds = []
-        for fold_idx, (train_idx, val_idx) in enumerate(
-            sgkf.split(np.zeros(len(df)), y, groups)
-        ):
+        for fold_idx, (train_idx, val_idx) in enumerate(sgkf.split(np.zeros(len(df)), y, groups)):
             # Guard: no patient should appear in both splits
             train_patients = set(groups[train_idx])
             val_patients = set(groups[val_idx])
             overlap = train_patients & val_patients
             if overlap:
-                raise ValueError(
-                    f"Fold {fold_idx}: patient overlap detected: {overlap}"
-                )
+                raise ValueError(f"Fold {fold_idx}: patient overlap detected: {overlap}")
 
             n_pos_train = int(y[train_idx].sum())
             n_pos_val = int(y[val_idx].sum())
@@ -154,8 +151,7 @@ class Trainer:
 
             if n_pos_val == 0:
                 raise ValueError(
-                    f"Fold {fold_idx} has 0 positive examples in validation. "
-                    "Cannot compute pAUC."
+                    f"Fold {fold_idx} has 0 positive examples in validation. Cannot compute pAUC."
                 )
 
             folds.append((train_idx, val_idx))
@@ -212,8 +208,8 @@ class Trainer:
             df_fold_train_raw = df_raw.iloc[train_idx].copy()
             df_fold_val_raw = df_raw.iloc[val_idx].copy()
 
-            df_tr, fold_features, fold_preprocessor, fold_selector = (
-                build_feature_pipeline(df_fold_train_raw, cfg, is_train=True)
+            df_tr, fold_features, fold_preprocessor, fold_selector = build_feature_pipeline(
+                df_fold_train_raw, cfg, is_train=True
             )
             df_va, _, _, _ = build_feature_pipeline(
                 df_fold_val_raw,
@@ -364,6 +360,7 @@ class Trainer:
 # JSON serialisation helper
 # ---------------------------------------------------------------------------
 
+
 def _to_serialisable(obj: Any) -> Any:
     """Recursively convert numpy scalars / arrays to Python native types."""
     if isinstance(obj, dict):
@@ -382,6 +379,7 @@ def _to_serialisable(obj: Any) -> Any:
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     """CLI: python -m isic2024.train [--config ...] [--output-dir ...]"""

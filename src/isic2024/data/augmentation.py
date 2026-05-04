@@ -4,12 +4,13 @@ Train: heavy augmentation with D4 symmetries, color jitter, blur, dropout.
 Val: resize + normalize only.
 TTA: 8 deterministic D4 transforms (4 rotations x 2 flips).
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-import numpy as np
 import albumentations as A
+import numpy as np
 from albumentations.core.transforms_interface import ImageOnlyTransform
 from albumentations.pytorch import ToTensorV2
 
@@ -42,29 +43,31 @@ def get_train_transforms(
     normalize_std: tuple[float, ...],
 ) -> A.Compose:
     """Training augmentations: geometric + color + dropout."""
-    return A.Compose([
-        A.Resize(image_size, image_size),
-        A.HorizontalFlip(p=cfg.hflip_p),
-        A.VerticalFlip(p=cfg.vflip_p),
-        A.RandomRotate90(p=cfg.rotate90_p),
-        A.Transpose(p=cfg.transpose_p),
-        A.ColorJitter(
-            brightness=cfg.brightness_limit,
-            contrast=cfg.contrast_limit,
-            saturation=cfg.saturation_limit,
-            hue=cfg.hue_limit,
-            p=cfg.color_jitter_p,
-        ),
-        A.GaussianBlur(blur_limit=(3, cfg.blur_limit), p=cfg.gaussian_blur_p),
-        A.CoarseDropout(
-            num_holes_range=(1, cfg.num_holes_max),
-            hole_height_range=(1, cfg.hole_height_max),
-            hole_width_range=(1, cfg.hole_width_max),
-            p=cfg.coarse_dropout_p,
-        ),
-        A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
-        ToTensorV2(),
-    ])
+    return A.Compose(
+        [
+            A.Resize(image_size, image_size),
+            A.HorizontalFlip(p=cfg.hflip_p),
+            A.VerticalFlip(p=cfg.vflip_p),
+            A.RandomRotate90(p=cfg.rotate90_p),
+            A.Transpose(p=cfg.transpose_p),
+            A.ColorJitter(
+                brightness=cfg.brightness_limit,
+                contrast=cfg.contrast_limit,
+                saturation=cfg.saturation_limit,
+                hue=cfg.hue_limit,
+                p=cfg.color_jitter_p,
+            ),
+            A.GaussianBlur(blur_limit=(3, cfg.blur_limit), p=cfg.gaussian_blur_p),
+            A.CoarseDropout(
+                num_holes_range=(1, cfg.num_holes_max),
+                hole_height_range=(1, cfg.hole_height_max),
+                hole_width_range=(1, cfg.hole_width_max),
+                p=cfg.coarse_dropout_p,
+            ),
+            A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
+            ToTensorV2(),
+        ]
+    )
 
 
 def get_val_transforms(
@@ -74,11 +77,13 @@ def get_val_transforms(
     normalize_std: tuple[float, ...],
 ) -> A.Compose:
     """Validation: resize + normalize only."""
-    return A.Compose([
-        A.Resize(image_size, image_size),
-        A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
-        ToTensorV2(),
-    ])
+    return A.Compose(
+        [
+            A.Resize(image_size, image_size),
+            A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
+            ToTensorV2(),
+        ]
+    )
 
 
 def get_tta_transforms(
@@ -94,10 +99,14 @@ def get_tta_transforms(
     transforms = []
     for k in [0, 1, 2, 3]:
         for do_hflip in [False, True]:
-            transforms.append(A.Compose([
-                A.Resize(image_size, image_size),
-                DeterministicD4(k=k, hflip=do_hflip),
-                A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
-                ToTensorV2(),
-            ]))
+            transforms.append(
+                A.Compose(
+                    [
+                        A.Resize(image_size, image_size),
+                        DeterministicD4(k=k, hflip=do_hflip),
+                        A.Normalize(mean=list(normalize_mean), std=list(normalize_std)),
+                        ToTensorV2(),
+                    ]
+                )
+            )
     return transforms

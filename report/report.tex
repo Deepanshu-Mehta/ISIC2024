@@ -86,8 +86,11 @@ pAUC~=~0.1672.
 \textbf{Phase~2} (image) fine-tunes four pretrained vision backbones
 (EfficientNetV2-S, EVA02-Small, ConvNeXtV2-B, SwinV2-B) on 401K lesion
 images using focal loss, weighted sampling, and test-time augmentation
-(TTA) with D4 symmetry transforms; the best individual image model
-(SwinV2-B) achieves pAUC~=~0.1549.
+(TTA) with D4 symmetry transforms.
+We introduce \emph{cross-modal tabular conditioning}: a two-layer MLP
+embeds 20 clinical features and concatenates them with backbone image
+features before the classification head, achieving pAUC~=~0.1588
+(+2.5\% over vanilla SwinV2-B at 0.1549).
 \textbf{Phase~3} (stacking) combines all five out-of-fold (OOF)
 prediction sources through rank transformation and a logistic regression
 meta-learner, achieving a final \textbf{pAUC~=~0.1745} ---
@@ -150,8 +153,16 @@ the metadata directly actionable for melanoma screening.
         \texttt{scale\_pos\_weight}, raising pAUC from 0.1217 to 0.1400.
   \item A multi-architecture image model sweep across four backbone
         families (CNN, ViT, ConvNet, hybrid) with focal loss and D4 TTA.
+  \item Cross-modal tabular conditioning: a two-layer MLP fuses 20
+        clinical features with SwinV2-B image features, yielding
+        pAUC~=~0.1588 (+2.5\% over vanilla).
   \item A stacking meta-learner achieving pAUC~=~0.1745 by fusing
         tabular and image signals through rank-transformed features.
+  \item A leave-one-out ablation study with SHAP attribution,
+        demonstrating that tabular features are the most impactful
+        stacking source (6.4\% pAUC drop when removed) and that
+        architectural diversity matters more than individual model
+        quality for ensemble gains.
 \end{enumerate}
 
 %% =============================================================
@@ -534,6 +545,7 @@ maximise architectural diversity:
     EVA02-Small      & ViT (MIM pretrain) & 22M & $336^2$ \\
     ConvNeXtV2-B     & Pure ConvNet & 88M & $224^2$ \\
     SwinV2-B         & Shifted-window ViT & 87M & $256^2$ \\
+    SwinV2-B + Tab.\ & Shifted-window ViT + MLP & 87M+ & $256^2$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -629,6 +641,70 @@ on-the-fly via OpenCV to avoid disk I/O bottlenecks from 401K
 individual files. Each DataLoader worker opens its own HDF5 file
 handle (via a custom \texttt{worker\_init\_fn}) to avoid Python GIL
 contention and ensure thread-safe access.
+
+\subsection{Cross-Modal Tabular Conditioning}
+\label{sec:tabcond}
+
+To create genuine cross-modal learning, we condition the SwinV2-B
+image backbone on 20 clinical features via a two-layer MLP:
+\begin{equation}
+  \mathbf{e}_{\text{tab}} = \text{GELU}\!\left(
+    \text{LN}\!\left(W_2\,\text{GELU}\!\left(
+      \text{LN}\!\left(W_1\mathbf{x}_{\text{tab}} + \mathbf{b}_1\right)
+    \right) + \mathbf{b}_2\right)
+  \right)
+  \label{eq:tab_embed}
+\end{equation}
+where $\mathbf{x}_{\text{tab}} \in \mathbb{R}^{20}$ is the
+StandardScaler-normalised clinical feature vector,
+$W_1 \in \mathbb{R}^{128 \times 20}$, $W_2 \in \mathbb{R}^{64 \times 128}$,
+and LN denotes LayerNorm. The tabular embedding
+$\mathbf{e}_{\text{tab}} \in \mathbb{R}^{64}$ is concatenated with
+the backbone's pooled image features
+$\mathbf{f}_{\text{img}} \in \mathbb{R}^{1024}$ before the
+classification head:
+\begin{equation}
+  \hat{y} = \sigma\!\left(
+    W_h\,[\mathbf{f}_{\text{img}} \| \mathbf{e}_{\text{tab}}] + b_h
+  \right)
+  \label{eq:fusion}
+\end{equation}
+
+The 20 tabular features span demographics (\texttt{age\_approx},
+\texttt{sex}), anatomical site, and TBP-derived measurements
+(colour, border, symmetry, nevi confidence).
+Categorical features use fixed integer mappings (not dynamic encoding)
+to ensure consistency across CV folds.
+The tabular MLP and classification head share the same learning rate
+($5\times 10^{-4}$), while the pretrained backbone uses $5\times 10^{-5}$.
+The scaler is fitted per fold to prevent leakage.
+
+This architecture achieves pAUC~=~\textbf{0.1588} (+2.5\% over
+vanilla SwinV2-B at 0.1549), confirming that clinical context
+improves visual pattern recognition.
+However, when added to the stacking ensemble, the tabular-conditioned
+model is highly correlated with vanilla SwinV2-B (same backbone),
+reducing ensemble diversity.
+A systematic stacking configuration comparison
+(Table~\ref{tab:stacking_configs}) shows that architectural diversity
+matters more than individual model quality for ensemble gains.
+
+\begin{table}[!t]
+  \centering
+  \caption{Stacking Configuration Comparison (LogReg, 5-fold CV).}
+  \label{tab:stacking_configs}
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Configuration} & \textbf{Sources} & \textbf{pAUC} \\
+    \midrule
+    Original (4 backbones)              & 5 & \textbf{0.1745} \\
+    Replace EffNet with SwinV2-B+Tab    & 5 & 0.1732 \\
+    All 6 sources                       & 6 & 0.1729 \\
+    Drop EffNet \& vanilla Swin         & 4 & 0.1707 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 %% =============================================================
 \section{Phase~3: Stacking Meta-Learner}
@@ -871,7 +947,8 @@ Table~\ref{tab:phase2_folds} provides the per-fold breakdown.
     EfficientNetV2-S & 20M & $224^2$ & 0.1399 & 0.9239 \\
     EVA02-Small      & 22M & $336^2$ & 0.1403 & 0.9220 \\
     ConvNeXtV2-B     & 88M & $224^2$ & 0.1464 & 0.9286 \\
-    \textbf{SwinV2-B} & \textbf{87M} & $\mathbf{256^2}$ & \textbf{0.1549} & \textbf{0.9388} \\
+    SwinV2-B         & 87M & $256^2$ & 0.1549 & 0.9388 \\
+    \textbf{SwinV2-B + Tab.}\ & \textbf{87M+} & $\mathbf{256^2}$ & \textbf{0.1588} & --- \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1002,6 +1079,82 @@ Fig.~\ref{fig:stacking_comparison} compares all four stacking methods.
   \label{fig:stacking_comparison}
 \end{figure}
 
+\subsection{Ablation Study}
+\label{sec:ablation}
+
+To quantify each source's contribution to the stacking ensemble,
+we perform a leave-one-out ablation: for each of the five sources,
+we retrain the LogReg stacker on the remaining four sources (5-fold CV)
+and measure the pAUC drop.
+
+\begin{table}[!t]
+  \centering
+  \caption{Leave-One-Out Ablation (LogReg Stacker, 5-fold CV).}
+  \label{tab:ablation}
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{lccr}
+    \toprule
+    \textbf{Source Removed} & \textbf{pAUC w/o} & \textbf{Drop} & \textbf{Drop \%} \\
+    \midrule
+    Tabular GBDT    & 0.1633 & $+0.0112$ & $6.4\%$ \\
+    SwinV2-B        & 0.1720 & $+0.0024$ & $1.4\%$ \\
+    ConvNeXtV2-B    & 0.1736 & $+0.0009$ & $0.5\%$ \\
+    EVA02-Small     & 0.1736 & $+0.0009$ & $0.5\%$ \\
+    EfficientNetV2-S& 0.1748 & $-0.0003$ & $-0.2\%$ \\
+    \midrule
+    \textbf{Full (all 5)} & \textbf{0.1745} & --- & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:ablation} reveals a clear hierarchy:
+\textbf{tabular GBDT is by far the most impactful source},
+with a 6.4\% pAUC drop when removed.
+SwinV2-B is the most valuable image model (1.4\% drop).
+EfficientNetV2-S has a slightly \emph{negative} contribution
+($-0.0003$), meaning the stacker performs marginally better without it;
+however, the effect is within noise and we retain it for robustness.
+
+\paragraph{SHAP attribution}
+We use SHAP's LinearExplainer~\cite{lundberg2017shap} on the LogReg
+stacker to compute exact feature attributions.
+Fig.~\ref{fig:shap} shows the mean absolute SHAP values:
+the tabular source dominates ($|\text{SHAP}| = 1.91$), followed by
+SwinV2-B (0.81) and the two mid-tier image models (EVA02, ConvNeXtV2,
+both $\sim$0.42).
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/shap_summary.png}
+  \caption{SHAP feature importance for the LogReg stacker. Tabular GBDT
+           dominates the malignancy prediction, followed by SwinV2-B.}
+  \label{fig:shap}
+\end{figure}
+
+\paragraph{LogReg coefficients}
+The stacker's learned coefficients (Fig.~\ref{fig:coefs}) confirm
+the SHAP ordering: tabular (7.63), SwinV2-B (3.25), EVA02 (1.67),
+ConvNeXtV2 (1.67), EfficientNetV2-S (0.74).
+The 3$\times$ gap between tabular and the best image source
+reflects the fact that the \texttt{tbp\_lv\_*} metadata numerically
+encodes the ABCDE criteria that image models must learn implicitly.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/logreg_coefficients.png}
+  \caption{LogReg stacker coefficients (fit on full OOF).
+           Tabular dominates; SwinV2-B is the strongest image source.}
+  \label{fig:coefs}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/ablation_drop.png}
+  \caption{Leave-one-out ablation: pAUC drop when each source is
+           removed from the LogReg stacker. Positive = source helps.}
+  \label{fig:ablation}
+\end{figure}
+
 \subsection{Cross-Phase Comparison}
 
 Table~\ref{tab:grand_summary} presents the final results across all
@@ -1017,7 +1170,7 @@ three phases.
     \textbf{Phase} & \textbf{Best Model} & \textbf{pAUC} \\
     \midrule
     1 (Tabular)  & Calibrated GBDT Ensemble & 0.1672 \\
-    2 (Image)    & SwinV2-B                 & 0.1549 \\
+    2 (Image)    & SwinV2-B + Tabular cond. & 0.1588 \\
     3 (Stacking) & \textbf{LogReg on ranks} & \textbf{0.1745} \\
     \bottomrule
   \end{tabular}
@@ -1044,13 +1197,23 @@ metadata, as evidenced by the +5.6\% pAUC gain from stacking.
 
 The stacking improvement (0.1653 $\to$ 0.1745) confirms that
 tabular and image models make complementary errors.
-Within image models, the four architectures also contribute differently:
-SwinV2-B's shifted-window attention captures multi-scale spatial
-relationships, while ConvNeXtV2-B's strong local priors excel at
-texture features.
-Even the weaker models (EfficientNetV2-S, EVA02-Small) contribute
-to the stacking gain because they make \emph{different} errors on
-different subsets of samples.
+The ablation study (Table~\ref{tab:ablation}) quantifies this:
+tabular GBDT alone accounts for a 6.4\% pAUC drop when removed,
+while the best image model (SwinV2-B) contributes 1.4\%.
+SHAP attribution (Fig.~\ref{fig:shap}) confirms this ordering.
+
+A revealing finding is that \emph{architectural diversity matters
+more than individual model quality} for stacking.
+The tabular-conditioned SwinV2-B achieves 0.1588 individually
+(+2.5\% over vanilla SwinV2-B at 0.1549), yet replacing
+EfficientNetV2-S (0.1399) with it in the stacker \emph{reduces}
+pAUC from 0.1745 to 0.1732 (Table~\ref{tab:stacking_configs}).
+The reason: SwinV2-B + Tabular is highly correlated with vanilla
+SwinV2-B (same backbone), while EfficientNetV2-S (a CNN with
+MBConv blocks) makes fundamentally different errors.
+This validates Caruana et al.'s~\cite{caruana2004ensemble} finding
+that ensemble benefit comes from error decorrelation, not from
+ensembling the best $k$ models.
 
 \subsection{Why LogReg Beats LightGBM as Meta-Learner}
 
@@ -1088,6 +1251,15 @@ possibly due to atypical presentations or lower-quality imaging.
 This consistent pattern across architecturally diverse models
 rules out model-specific bias as the cause.
 
+\subsection{Interactive Demo}
+
+An interactive Gradio web application is deployed at
+\url{https://huggingface.co/spaces/Deepanshu027/isic2024-demo},
+showcasing 8 curated gallery cases (3 clearly benign, 3 confirmed
+malignant, 2 diagnostic edge cases) with OOF predictions from all
+three pipeline phases and clinical metadata.
+A Dockerfile is provided for local reproduction.
+
 \subsection{Limitations and Future Work}
 
 \begin{itemize}[noitemsep, leftmargin=*]
@@ -1120,15 +1292,21 @@ Key findings:
 (1)~Tabular metadata with ABCDE feature engineering and ugly duckling
 z-scores outperforms image models individually, because the
 \texttt{tbp\_lv\_*} columns \emph{are} quantitative ABCDE measurements.
-(2)~Image models capture complementary visual signals: stacking
-improves pAUC by 5.6\% over the best individual model.
-(3)~Architecture diversity (CNN, ViT, ConvNet, hybrid) matters more
-than single-model optimisation for stacking ensembles.
-(4)~With only 393 positives, logistic regression outperforms LightGBM
+(2)~Cross-modal tabular conditioning improves the best image model
+by 2.5\% (SwinV2-B: 0.1549 $\to$ 0.1588), confirming that clinical
+context aids visual pattern recognition.
+(3)~Stacking improves pAUC by 5.6\% over the best individual model;
+leave-one-out ablation shows tabular is the dominant source (6.4\%
+drop) while SHAP confirms the attribution hierarchy.
+(4)~Architecture diversity matters more than individual model quality
+for stacking: a weaker but architecturally distinct model
+(EfficientNetV2-S, 0.1399) contributes more to the ensemble than a
+stronger but correlated model (SwinV2-B + Tabular, 0.1588).
+(5)~With only 393 positives, logistic regression outperforms LightGBM
 as a meta-learner --- a textbook bias-variance trade-off outcome.
-(5)~LightGBM's \texttt{min\_child\_samples} is semantically
+(6)~LightGBM's \texttt{min\_child\_samples} is semantically
 incompatible with \texttt{scale\_pos\_weight} for imbalanced data.
-(6)~Identical CV splits across all phases enable leak-free OOF
+(7)~Identical CV splits across all phases enable leak-free OOF
 alignment, which is the foundation that makes multi-phase stacking
 possible.
 
@@ -1295,6 +1473,11 @@ R.~Caruana \emph{et al.},
 H.~Zhang \emph{et al.},
 ``mixup: Beyond Empirical Risk Minimization,''
 \emph{Proc.\ ICLR}, 2018.
+
+\bibitem{lundberg2017shap}
+S.~M.~Lundberg and S.-I.~Lee,
+``A Unified Approach to Interpreting Model Predictions,''
+\emph{NeurIPS}, vol.~30, 2017.
 
 \end{thebibliography}
 

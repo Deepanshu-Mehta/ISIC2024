@@ -7,6 +7,7 @@ classical probabilistic model alongside the GBDT ensemble.
 ⚠ Speed warning: SVC with probability=True on 401K rows takes hours.
   Always subsample before training (see SVMBaseline.fit docstring).
 """
+
 from __future__ import annotations
 
 import pickle
@@ -56,9 +57,7 @@ class SVMBaseline(BaseModel):
         cfg = self._config
 
         # Stratified subsample to keep SVC tractable
-        X_sub, y_sub = _stratified_subsample(
-            X_train, y_train, self._max_train_samples, seed
-        )
+        X_sub, y_sub = _stratified_subsample(X_train, y_train, self._max_train_samples, seed)
         n_pos = int(y_sub.sum())
         logger.info(
             f"SVMBaseline: training on {len(X_sub):,} rows "
@@ -119,6 +118,7 @@ class SVMBaseline(BaseModel):
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
+
 
 def _stratified_subsample(
     X: np.ndarray,

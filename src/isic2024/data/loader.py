@@ -1,4 +1,5 @@
 """CSV loading and column validation for the ISIC 2024 dataset."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -55,6 +56,5 @@ def validate_columns(df: pd.DataFrame, required: list[str]) -> None:
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(
-            f"Missing required columns: {missing}. "
-            f"Available columns: {sorted(df.columns.tolist())}"
+            f"Missing required columns: {missing}. Available columns: {sorted(df.columns.tolist())}"
         )

@@ -2,6 +2,7 @@
 
 Load with Phase2Config.from_yaml(path). Reuses CVConfig from Phase 1.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -64,24 +65,39 @@ class TabularCondConfig:
     """
 
     enabled: bool = False
-    features: list = field(default_factory=lambda: [
-        # Demographics & anatomy
-        "age_approx", "sex", "anatom_site_general",
-        # Color channels (TBP system measurements)
-        "tbp_lv_A", "tbp_lv_Aext", "tbp_lv_B", "tbp_lv_H", "tbp_lv_Hext", "tbp_lv_L",
-        # Color differences (ABCD criteria: color variation)
-        "tbp_lv_deltaA", "tbp_lv_deltaB", "tbp_lv_deltaLBnorm", "tbp_lv_Cext",
-        # Shape & structure (ABCD criteria: border/asymmetry)
-        "tbp_lv_area_perim_ratio", "tbp_lv_symm_2axis", "tbp_lv_stdL",
-        # Model confidence scores from ISIC system
-        "tbp_lv_nevi_confidence", "tbp_lv_dnn_lesion_confidence",
-        # Patient-level context (ugly duckling)
-        "n_lesions_patient",
-        # Spatial location
-        "tbp_lv_y",
-    ])
-    embed_dim: int = 64     # output dimension of tabular MLP
-    hidden_dim: int = 128   # hidden layer of tabular MLP
+    features: list = field(
+        default_factory=lambda: [
+            # Demographics & anatomy
+            "age_approx",
+            "sex",
+            "anatom_site_general",
+            # Color channels (TBP system measurements)
+            "tbp_lv_A",
+            "tbp_lv_Aext",
+            "tbp_lv_B",
+            "tbp_lv_H",
+            "tbp_lv_Hext",
+            "tbp_lv_L",
+            # Color differences (ABCD criteria: color variation)
+            "tbp_lv_deltaA",
+            "tbp_lv_deltaB",
+            "tbp_lv_deltaLBnorm",
+            "tbp_lv_Cext",
+            # Shape & structure (ABCD criteria: border/asymmetry)
+            "tbp_lv_area_perim_ratio",
+            "tbp_lv_symm_2axis",
+            "tbp_lv_stdL",
+            # Model confidence scores from ISIC system
+            "tbp_lv_nevi_confidence",
+            "tbp_lv_dnn_lesion_confidence",
+            # Patient-level context (ugly duckling)
+            "n_lesions_patient",
+            # Spatial location
+            "tbp_lv_y",
+        ]
+    )
+    embed_dim: int = 64  # output dimension of tabular MLP
+    hidden_dim: int = 128  # hidden layer of tabular MLP
     dropout: float = 0.1
 
 

@@ -1,4 +1,5 @@
 """Tests for src/isic2024/data/loader.py."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,6 +12,7 @@ from isic2024.data.loader import load_data, validate_columns
 # ---------------------------------------------------------------------------
 # load_data
 # ---------------------------------------------------------------------------
+
 
 def test_load_data_reads_csv(tmp_path: Path, synthetic_df: pd.DataFrame) -> None:
     """load_data should return a DataFrame with the same shape as the saved CSV."""
@@ -38,13 +40,11 @@ def test_load_data_logs_target_distribution(
 
     df = load_data(csv_path)
 
-    assert int(df["target"].sum()) == 3          # 3 malignant in synthetic fixture
+    assert int(df["target"].sum()) == 3  # 3 malignant in synthetic fixture
     assert len(df) == 100
 
 
-def test_load_data_accepts_path_string(
-    tmp_path: Path, synthetic_df: pd.DataFrame
-) -> None:
+def test_load_data_accepts_path_string(tmp_path: Path, synthetic_df: pd.DataFrame) -> None:
     """load_data should accept both str and Path."""
     csv_path = tmp_path / "train.csv"
     synthetic_df.to_csv(csv_path, index=False)
@@ -56,6 +56,7 @@ def test_load_data_accepts_path_string(
 # ---------------------------------------------------------------------------
 # validate_columns
 # ---------------------------------------------------------------------------
+
 
 def test_validate_columns_passes_when_all_present(synthetic_df: pd.DataFrame) -> None:
     """validate_columns should not raise when all required cols are present."""

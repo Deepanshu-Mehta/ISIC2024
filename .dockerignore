@@ -1,0 +1,10 @@
+# Everything by default — whitelist only what the app needs
+*
+
+# Allow the app directory
+!app/
+!app/**
+
+# But exclude __pycache__
+app/**/__pycache__
+app/**/*.pyc

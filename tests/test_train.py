@@ -3,6 +3,7 @@
 Fast tests cover fold creation correctness (patient separation, positive count,
 coverage). Slow tests exercise actual model training on synthetic data.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -11,10 +12,10 @@ import pytest
 
 from isic2024.train import Trainer
 
-
 # ---------------------------------------------------------------------------
 # Synthetic dataset large enough for 3-fold CV with patient grouping
 # ---------------------------------------------------------------------------
+
 
 def _make_train_df(n_patients: int = 10, lesions_per_patient: int = 30, seed: int = 0):
     """Synthetic DataFrame that mirrors the real ISIC 2024 structure.
@@ -62,28 +63,30 @@ def _make_train_df(n_patients: int = 10, lesions_per_patient: int = 30, seed: in
         "tbp_lv_location_simple": rng.choice(["head", "trunk", "arm", "leg"], n),
     }
 
-    return pd.DataFrame({
-        "isic_id": [f"ISIC_{i:07d}" for i in range(n)],
-        "patient_id": patients,
-        "target": target,
-        "age_approx": age,
-        "sex": rng.choice(["male", "female"], n),
-        "anatom_site_general": rng.choice(
-            ["torso", "lower extremity", "upper extremity", "head/neck"], n
-        ),
-        "clin_size_long_diam_mm": rng.uniform(1.0, 20.0, n),
-        "attribution": rng.choice(["Hospital_A", "Hospital_B"], n),
-        "tbp_tile_type": rng.choice(["3D: white", "3D: XP"], n, p=[0.7, 0.3]),
-        "image_type": "TBP tile: ISIC",
-        "copyright_license": "CC-BY-NC",
-        "lesion_id": lesion_id,
-        "mel_thick_mm": np.where(target == 1, rng.uniform(0.5, 3.0, n), np.nan),
-        "mel_mitotic_index": np.where(target == 1, "0/mm^2", None),
-        "iddx_full": np.where(target == 1, "Melanoma Invasive", None),
-        "iddx_1": np.where(target == 1, "Melanoma", None),
-        "iddx_2": np.full(n, np.nan),
-        **tbp,
-    })
+    return pd.DataFrame(
+        {
+            "isic_id": [f"ISIC_{i:07d}" for i in range(n)],
+            "patient_id": patients,
+            "target": target,
+            "age_approx": age,
+            "sex": rng.choice(["male", "female"], n),
+            "anatom_site_general": rng.choice(
+                ["torso", "lower extremity", "upper extremity", "head/neck"], n
+            ),
+            "clin_size_long_diam_mm": rng.uniform(1.0, 20.0, n),
+            "attribution": rng.choice(["Hospital_A", "Hospital_B"], n),
+            "tbp_tile_type": rng.choice(["3D: white", "3D: XP"], n, p=[0.7, 0.3]),
+            "image_type": "TBP tile: ISIC",
+            "copyright_license": "CC-BY-NC",
+            "lesion_id": lesion_id,
+            "mel_thick_mm": np.where(target == 1, rng.uniform(0.5, 3.0, n), np.nan),
+            "mel_mitotic_index": np.where(target == 1, "0/mm^2", None),
+            "iddx_full": np.where(target == 1, "Melanoma Invasive", None),
+            "iddx_1": np.where(target == 1, "Melanoma", None),
+            "iddx_2": np.full(n, np.nan),
+            **tbp,
+        }
+    )
 
 
 @pytest.fixture(scope="module")
@@ -95,6 +98,7 @@ def small_train_df():
 def three_fold_config(base_config):
     """Config with 3 folds and seed averaging disabled for faster tests."""
     import copy
+
     cfg = copy.deepcopy(base_config)
     cfg.cv.n_splits = 3
     cfg.seed_averaging.enabled = False
@@ -111,6 +115,7 @@ def three_fold_config(base_config):
 # Test 1: create_folds returns the correct number of folds
 # ---------------------------------------------------------------------------
 
+
 def test_create_folds_count(small_train_df, three_fold_config, tmp_path):
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
     folds = trainer.create_folds(small_train_df)
@@ -120,6 +125,7 @@ def test_create_folds_count(small_train_df, three_fold_config, tmp_path):
 # ---------------------------------------------------------------------------
 # Test 2: no patient appears in both train and val of the same fold
 # ---------------------------------------------------------------------------
+
 
 def test_create_folds_no_patient_overlap(small_train_df, three_fold_config, tmp_path):
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
@@ -139,6 +145,7 @@ def test_create_folds_no_patient_overlap(small_train_df, three_fold_config, tmp_
 # Test 3: each fold has at least 1 positive in val
 # ---------------------------------------------------------------------------
 
+
 def test_create_folds_positives_in_val(small_train_df, three_fold_config, tmp_path):
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
     folds = trainer.create_folds(small_train_df)
@@ -152,6 +159,7 @@ def test_create_folds_positives_in_val(small_train_df, three_fold_config, tmp_pa
 # ---------------------------------------------------------------------------
 # Test 4: val indices cover all rows exactly once (no gaps, no overlap)
 # ---------------------------------------------------------------------------
+
 
 def test_create_folds_full_coverage(small_train_df, three_fold_config, tmp_path):
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
@@ -167,8 +175,10 @@ def test_create_folds_full_coverage(small_train_df, three_fold_config, tmp_path)
 # Test 5: train_cv returns OOF predictions of correct shape and range
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_train_cv_oof_shape_and_range(small_train_df, three_fold_config, tmp_path):
+    pytest.importorskip("catboost")
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
     folds = trainer.create_folds(small_train_df)
     results = trainer.train_cv(small_train_df, folds)
@@ -179,9 +189,7 @@ def test_train_cv_oof_shape_and_range(small_train_df, three_fold_config, tmp_pat
     for col in ["lgbm", "xgb", "catboost", "svm", "ensemble"]:
         assert col in oof_df.columns, f"Missing OOF column: {col}"
         vals = oof_df[col].values
-        assert vals.min() >= 0.0 and vals.max() <= 1.0, (
-            f"{col} predictions outside [0, 1]"
-        )
+        assert vals.min() >= 0.0 and vals.max() <= 1.0, f"{col} predictions outside [0, 1]"
 
     # isic_id should be present since it's in the raw df
     assert "isic_id" in oof_df.columns
@@ -191,8 +199,10 @@ def test_train_cv_oof_shape_and_range(small_train_df, three_fold_config, tmp_pat
 # Test 6: cv_results has expected structure and valid pAUC range
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_train_cv_results_structure(small_train_df, three_fold_config, tmp_path):
+    pytest.importorskip("catboost")
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
     folds = trainer.create_folds(small_train_df)
     results = trainer.train_cv(small_train_df, folds)
@@ -212,8 +222,10 @@ def test_train_cv_results_structure(small_train_df, three_fold_config, tmp_path)
 # Test 7: Trainer.run smoke test — creates all output files
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_trainer_run_creates_output_files(small_train_df, three_fold_config, tmp_path):
+    pytest.importorskip("catboost")
     trainer = Trainer(three_fold_config, output_dir=tmp_path)
     results = trainer.run(small_train_df.copy())
 

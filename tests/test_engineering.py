@@ -1,9 +1,9 @@
 """Tests for src/isic2024/features/engineering.py."""
+
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from isic2024.features.engineering import (
     build_features,
@@ -20,6 +20,7 @@ _EPS = 1e-8
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def preprocessed_df(synthetic_df: pd.DataFrame, base_config) -> pd.DataFrame:
     """Return a preprocessed version of the synthetic fixture."""
     from isic2024.data.preprocess import Preprocessor
@@ -32,12 +33,19 @@ def preprocessed_df(synthetic_df: pd.DataFrame, base_config) -> pd.DataFrame:
 # Color features
 # ---------------------------------------------------------------------------
 
+
 class TestColorFeatures:
     def test_columns_created(self, synthetic_df, base_config):
         df = preprocessed_df(synthetic_df, base_config)
         out = compute_color_features(df)
-        for col in ["delta_e", "lesion_chroma", "skin_chroma", "delta_chroma",
-                    "color_ratio_L", "hue_diff"]:
+        for col in [
+            "delta_e",
+            "lesion_chroma",
+            "skin_chroma",
+            "delta_chroma",
+            "color_ratio_L",
+            "hue_diff",
+        ]:
             assert col in out.columns, f"Missing colour column: {col}"
 
     def test_delta_e_hand_calculated(self, synthetic_df, base_config):
@@ -46,9 +54,7 @@ class TestColorFeatures:
         out = compute_color_features(df)
 
         expected = np.sqrt(
-            df["tbp_lv_deltaA"] ** 2
-            + df["tbp_lv_deltaB"] ** 2
-            + df["tbp_lv_deltaL"] ** 2
+            df["tbp_lv_deltaA"] ** 2 + df["tbp_lv_deltaB"] ** 2 + df["tbp_lv_deltaL"] ** 2
         )
         np.testing.assert_allclose(out["delta_e"].values, expected.values, rtol=1e-6)
 
@@ -65,15 +71,27 @@ class TestColorFeatures:
     def test_no_nan_in_color_features(self, synthetic_df, base_config):
         df = preprocessed_df(synthetic_df, base_config)
         out = compute_color_features(df)
-        color_cols = ["delta_e", "lesion_chroma", "skin_chroma",
-                      "delta_chroma", "color_ratio_L", "hue_diff"]
+        color_cols = [
+            "delta_e",
+            "lesion_chroma",
+            "skin_chroma",
+            "delta_chroma",
+            "color_ratio_L",
+            "hue_diff",
+        ]
         assert out[color_cols].isna().sum().sum() == 0
 
     def test_no_inf_in_color_features(self, synthetic_df, base_config):
         df = preprocessed_df(synthetic_df, base_config)
         out = compute_color_features(df)
-        color_cols = ["delta_e", "lesion_chroma", "skin_chroma",
-                      "delta_chroma", "color_ratio_L", "hue_diff"]
+        color_cols = [
+            "delta_e",
+            "lesion_chroma",
+            "skin_chroma",
+            "delta_chroma",
+            "color_ratio_L",
+            "hue_diff",
+        ]
         assert np.isfinite(out[color_cols].values).all()
 
     def test_input_not_mutated(self, synthetic_df, base_config):
@@ -87,6 +105,7 @@ class TestColorFeatures:
 # Shape features
 # ---------------------------------------------------------------------------
 
+
 class TestShapeFeatures:
     def test_columns_created(self, synthetic_df, base_config):
         df = preprocessed_df(synthetic_df, base_config)
@@ -97,12 +116,14 @@ class TestShapeFeatures:
     def test_circularity_perfect_circle(self):
         """For a perfect circle: circularity = 4π·A / P² = 4π·(πr²) / (2πr)² = 1.0."""
         r = 5.0
-        area = np.pi * r ** 2
+        area = np.pi * r**2
         perimeter = 2 * np.pi * r
-        df = pd.DataFrame({
-            "tbp_lv_areaMM2": [area],
-            "tbp_lv_perimeterMM": [perimeter],
-        })
+        df = pd.DataFrame(
+            {
+                "tbp_lv_areaMM2": [area],
+                "tbp_lv_perimeterMM": [perimeter],
+            }
+        )
         out = compute_shape_features(df)
         assert abs(float(out["circularity"].iloc[0]) - 1.0) < 1e-4
 
@@ -135,6 +156,7 @@ class TestShapeFeatures:
 # Interaction features
 # ---------------------------------------------------------------------------
 
+
 class TestInteractionFeatures:
     def _enriched_df(self, synthetic_df, base_config):
         """Return df with color + shape features already applied."""
@@ -164,6 +186,7 @@ class TestInteractionFeatures:
 # ---------------------------------------------------------------------------
 # Location features
 # ---------------------------------------------------------------------------
+
 
 class TestLocationFeatures:
     def test_columns_created(self, synthetic_df, base_config):
@@ -199,17 +222,26 @@ class TestLocationFeatures:
 # build_features — integration
 # ---------------------------------------------------------------------------
 
+
 class TestBuildFeatures:
     def test_all_groups_enabled(self, synthetic_df, base_config):
         """With all feature groups on, all expected columns must be present."""
         df = preprocessed_df(synthetic_df, base_config)
         out = build_features(df, base_config)
         expected = [
-            "delta_e", "lesion_chroma", "skin_chroma", "delta_chroma",
-            "color_ratio_L", "hue_diff",
-            "circularity", "border_complexity", "log_area",
-            "age_x_area", "eccentricity_x_delta_e",
-            "n_lesions_patient", "n_lesions_site",
+            "delta_e",
+            "lesion_chroma",
+            "skin_chroma",
+            "delta_chroma",
+            "color_ratio_L",
+            "hue_diff",
+            "circularity",
+            "border_complexity",
+            "log_area",
+            "age_x_area",
+            "eccentricity_x_delta_e",
+            "n_lesions_patient",
+            "n_lesions_site",
         ]
         for col in expected:
             assert col in out.columns, f"Missing engineered column: {col}"

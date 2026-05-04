@@ -7,6 +7,7 @@ Correlation threshold is configurable (default 0.90). When two features are
 highly correlated, the one with lower absolute correlation with the target is
 dropped. This preserves the most predictive member of each correlated cluster.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -53,9 +54,7 @@ class FeatureSelector:
         """
         exclude = _NON_FEATURE_COLS | {target_col}
         feat_cols: list[str] = [
-            c
-            for c in df.select_dtypes(include=[np.number]).columns
-            if c not in exclude
+            c for c in df.select_dtypes(include=[np.number]).columns if c not in exclude
         ]
         n_start = len(feat_cols)
 
@@ -92,9 +91,7 @@ class FeatureSelector:
             RuntimeError: If called before ``fit``.
         """
         if not self._is_fitted:
-            raise RuntimeError(
-                "FeatureSelector.transform() called before fit(). Call fit() first."
-            )
+            raise RuntimeError("FeatureSelector.transform() called before fit(). Call fit() first.")
         return df[self.selected_cols_]
 
     # ------------------------------------------------------------------
@@ -113,9 +110,7 @@ class FeatureSelector:
                 surviving.append(col)
         return surviving
 
-    def _drop_correlated(
-        self, df: pd.DataFrame, cols: list[str], target_col: str
-    ) -> list[str]:
+    def _drop_correlated(self, df: pd.DataFrame, cols: list[str], target_col: str) -> list[str]:
         if len(cols) < 2:
             return cols
 

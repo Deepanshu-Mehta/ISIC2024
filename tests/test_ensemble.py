@@ -1,4 +1,5 @@
 """Tests for RankEnsemble."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -6,10 +7,10 @@ import pytest
 
 from isic2024.models.ensemble import RankEnsemble
 
-
 # ---------------------------------------------------------------------------
 # Test 1: output is in [0, 1]
 # ---------------------------------------------------------------------------
+
 
 def test_rank_ensemble_output_range() -> None:
     rng = np.random.default_rng(0)
@@ -24,6 +25,7 @@ def test_rank_ensemble_output_range() -> None:
 # Test 2: equal weights produce same result as no weights
 # ---------------------------------------------------------------------------
 
+
 def test_rank_ensemble_equal_weights() -> None:
     rng = np.random.default_rng(1)
     preds = [rng.random(50) for _ in range(3)]
@@ -36,6 +38,7 @@ def test_rank_ensemble_equal_weights() -> None:
 # Test 3: single model returns its own rank-normalised scores
 # ---------------------------------------------------------------------------
 
+
 def test_rank_ensemble_single_model() -> None:
     preds = [np.array([0.1, 0.9, 0.5, 0.3])]
     out = RankEnsemble().predict(preds)
@@ -47,6 +50,7 @@ def test_rank_ensemble_single_model() -> None:
 # ---------------------------------------------------------------------------
 # Test 4: ranking is preserved (monotone w.r.t. original order)
 # ---------------------------------------------------------------------------
+
 
 def test_rank_ensemble_preserves_order() -> None:
     # Two models agree on ordering → blended output should preserve it
@@ -62,6 +66,7 @@ def test_rank_ensemble_preserves_order() -> None:
 # Test 5: weighted blend gives more weight to first model
 # ---------------------------------------------------------------------------
 
+
 def test_rank_ensemble_weights_effect() -> None:
     rng = np.random.default_rng(2)
     p1 = rng.random(200)
@@ -74,6 +79,7 @@ def test_rank_ensemble_weights_effect() -> None:
 
     # Rank correlation of out_weighted with p1 should be higher than out_equal
     from scipy.stats import spearmanr
+
     r_equal = spearmanr(out_equal, p1).statistic
     r_weighted = spearmanr(out_weighted, p1).statistic
     assert r_weighted > r_equal
@@ -82,6 +88,7 @@ def test_rank_ensemble_weights_effect() -> None:
 # ---------------------------------------------------------------------------
 # Test 6: empty predictions list raises ValueError
 # ---------------------------------------------------------------------------
+
 
 def test_rank_ensemble_empty_raises() -> None:
     with pytest.raises(ValueError, match="empty"):
@@ -92,6 +99,7 @@ def test_rank_ensemble_empty_raises() -> None:
 # Test 7: mismatched lengths raise ValueError
 # ---------------------------------------------------------------------------
 
+
 def test_rank_ensemble_length_mismatch_raises() -> None:
     with pytest.raises(ValueError):
         RankEnsemble().predict([np.ones(10), np.ones(20)])
@@ -100,6 +108,7 @@ def test_rank_ensemble_length_mismatch_raises() -> None:
 # ---------------------------------------------------------------------------
 # Test 8: mismatched weights length raises ValueError
 # ---------------------------------------------------------------------------
+
 
 def test_rank_ensemble_weight_mismatch_raises() -> None:
     preds = [np.ones(10), np.ones(10)]
@@ -110,6 +119,7 @@ def test_rank_ensemble_weight_mismatch_raises() -> None:
 # ---------------------------------------------------------------------------
 # Test 9: ties handled gracefully (no NaN in output)
 # ---------------------------------------------------------------------------
+
 
 def test_rank_ensemble_handles_ties() -> None:
     preds = [np.ones(20) * 0.5, np.ones(20) * 0.5]

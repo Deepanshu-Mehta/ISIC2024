@@ -8,6 +8,7 @@ Usage::
 
     python -m isic2024.train_stacking --output-dir outputs/phase3
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,7 +25,11 @@ from sklearn.linear_model import LogisticRegression
 from isic2024.evaluation.metrics import compute_pauc
 from isic2024.models.ensemble import RankEnsemble
 
-# Phase 2 backbone names and their output directories (relative to outputs/phase2/)
+# Phase 2 backbone names and their output directories (relative to outputs/phase2/).
+# swin_tabular excluded from stacker: high correlation with swin (same backbone) reduces diversity.
+# Stacking rewards architectural diversity over individual pAUC — effnet (0.1399) adds more
+# orthogonal signal than swin_tabular (0.1588), which is correlated with swin (0.1549).
+# Config comparison: original=0.1745, all-6=0.1729, no-effnet-with-swin-tab=0.1732.
 BACKBONES = ["efficientnetv2_s", "eva02", "convnextv2", "swin"]
 RANK_COLS = ["rank_tabular", "rank_effnet", "rank_eva02", "rank_convnext", "rank_swin"]
 
@@ -52,9 +57,7 @@ def load_and_merge(
     df = df_tab.merge(df_folds, on="isic_id", how="inner")
 
     # Phase 2 image predictions (one per backbone)
-    pred_col_map = dict(
-        zip(BACKBONES, ["pred_effnet", "pred_eva02", "pred_convnext", "pred_swin"])
-    )
+    pred_col_map = dict(zip(BACKBONES, ["pred_effnet", "pred_eva02", "pred_convnext", "pred_swin"]))
     for backbone in BACKBONES:
         oof_path = phase2_dir / backbone / "oof_image_predictions.csv"
         df_img = pd.read_csv(oof_path, usecols=["isic_id", "image_pred"])
@@ -248,14 +251,16 @@ def main() -> None:
     logger.info(f"Best stacking method: {best_method} (pAUC = {results[best_method]:.4f})")
 
     # Save OOF predictions
-    oof_df = pd.DataFrame({
-        "isic_id": df["isic_id"],
-        "target": df["target"],
-        "rank_ensemble": oof_rank_ens,
-        "rank_ensemble_weighted": oof_weighted,
-        "logreg_stacker": oof_logreg,
-        "lgbm_stacker": oof_lgbm,
-    })
+    oof_df = pd.DataFrame(
+        {
+            "isic_id": df["isic_id"],
+            "target": df["target"],
+            "rank_ensemble": oof_rank_ens,
+            "rank_ensemble_weighted": oof_weighted,
+            "logreg_stacker": oof_logreg,
+            "lgbm_stacker": oof_lgbm,
+        }
+    )
     oof_path = args.output_dir / "oof_stacking_predictions.csv"
     oof_df.to_csv(oof_path, index=False)
     logger.info(f"Saved OOF predictions to {oof_path}")

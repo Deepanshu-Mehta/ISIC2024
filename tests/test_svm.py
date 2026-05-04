@@ -1,4 +1,5 @@
 """Tests for SVMBaseline model."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -8,6 +9,7 @@ from isic2024.models.svm_baseline import SVMBaseline, _stratified_subsample
 # ---------------------------------------------------------------------------
 # Shared fixture
 # ---------------------------------------------------------------------------
+
 
 def _make_dataset(n: int = 200, n_feat: int = 10, seed: int = 0):
     rng = np.random.default_rng(seed)
@@ -24,6 +26,7 @@ def _make_dataset(n: int = 200, n_feat: int = 10, seed: int = 0):
 # Test 1: predict_proba output in [0, 1]
 # ---------------------------------------------------------------------------
 
+
 def test_svm_predict_proba_range(base_config) -> None:
     X_tr, y_tr, X_val, y_val = _make_dataset()
     model = SVMBaseline(base_config.svm, max_train_samples=200)
@@ -37,6 +40,7 @@ def test_svm_predict_proba_range(base_config) -> None:
 # Test 2: probabilities are calibrated (sum > 0, not all same)
 # ---------------------------------------------------------------------------
 
+
 def test_svm_probabilities_vary(base_config) -> None:
     X_tr, y_tr, X_val, y_val = _make_dataset()
     model = SVMBaseline(base_config.svm, max_train_samples=200)
@@ -48,6 +52,7 @@ def test_svm_probabilities_vary(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 3: save / load roundtrip
 # ---------------------------------------------------------------------------
+
 
 def test_svm_save_load(tmp_path, base_config) -> None:
     X_tr, y_tr, X_val, y_val = _make_dataset()
@@ -67,6 +72,7 @@ def test_svm_save_load(tmp_path, base_config) -> None:
 # Test 4: feature_importance returns zeros of correct length
 # ---------------------------------------------------------------------------
 
+
 def test_svm_feature_importance(base_config) -> None:
     X_tr, y_tr, X_val, y_val = _make_dataset(n_feat=10)
     model = SVMBaseline(base_config.svm, max_train_samples=200)
@@ -79,6 +85,7 @@ def test_svm_feature_importance(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 5: subsampling keeps positive rate
 # ---------------------------------------------------------------------------
+
 
 def test_stratified_subsample_preserves_rate() -> None:
     rng = np.random.default_rng(1)
@@ -99,6 +106,7 @@ def test_stratified_subsample_preserves_rate() -> None:
 # ---------------------------------------------------------------------------
 # Test 6: no subsampling when n < max_samples
 # ---------------------------------------------------------------------------
+
 
 def test_stratified_subsample_no_op_when_small() -> None:
     rng = np.random.default_rng(0)

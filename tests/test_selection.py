@@ -1,4 +1,5 @@
 """Tests for FeatureSelector and build_feature_pipeline."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -12,6 +13,7 @@ from isic2024.features.selection import FeatureSelector
 # Helper: build a small controlled DataFrame
 # ---------------------------------------------------------------------------
 
+
 def _make_selection_df(n: int = 200, seed: int = 0) -> pd.DataFrame:
     """DataFrame with known structure for testing each filter step."""
     rng = np.random.default_rng(seed)
@@ -24,9 +26,9 @@ def _make_selection_df(n: int = 200, seed: int = 0) -> pd.DataFrame:
     # (feat_a has a small extra signal added)
     feat_a = feat_a + target * 0.5
 
-    feat_c = rng.normal(0, 1, n)   # independent feature
+    feat_c = rng.normal(0, 1, n)  # independent feature
 
-    const_col = np.ones(n)                           # zero variance → constant
+    const_col = np.ones(n)  # zero variance → constant
     quasi_col = np.where(rng.random(n) < 0.996, 0.0, 1.0)  # 99.6% zeros
 
     return pd.DataFrame(
@@ -46,6 +48,7 @@ def _make_selection_df(n: int = 200, seed: int = 0) -> pd.DataFrame:
 # Test 1: constant column removed
 # ---------------------------------------------------------------------------
 
+
 def test_constant_column_removed(base_config) -> None:
     df = _make_selection_df()
     selector = FeatureSelector(base_config.features)
@@ -58,6 +61,7 @@ def test_constant_column_removed(base_config) -> None:
 # Test 2: quasi-constant column removed
 # ---------------------------------------------------------------------------
 
+
 def test_quasi_constant_removed(base_config) -> None:
     df = _make_selection_df()
     selector = FeatureSelector(base_config.features)
@@ -69,6 +73,7 @@ def test_quasi_constant_removed(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 3: correlated pair — lower target-corr member is dropped
 # ---------------------------------------------------------------------------
+
 
 def test_correlated_pair_drops_weaker(base_config) -> None:
     df = _make_selection_df()
@@ -93,6 +98,7 @@ def test_correlated_pair_drops_weaker(base_config) -> None:
 # Test 4: no NaN in transform output
 # ---------------------------------------------------------------------------
 
+
 def test_no_nan_in_transform(base_config) -> None:
     df = _make_selection_df()
     selector = FeatureSelector(base_config.features)
@@ -105,6 +111,7 @@ def test_no_nan_in_transform(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 5: patient_id and target not in selected_cols_
 # ---------------------------------------------------------------------------
+
 
 def test_patient_id_and_target_excluded(base_config) -> None:
     df = _make_selection_df()
@@ -119,6 +126,7 @@ def test_patient_id_and_target_excluded(base_config) -> None:
 # Test 6: transform before fit raises RuntimeError
 # ---------------------------------------------------------------------------
 
+
 def test_transform_before_fit_raises(base_config) -> None:
     df = _make_selection_df()
     selector = FeatureSelector(base_config.features)
@@ -130,6 +138,7 @@ def test_transform_before_fit_raises(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 7: train/val consistency — same columns applied to val
 # ---------------------------------------------------------------------------
+
 
 def test_train_val_consistency(base_config) -> None:
     df_train = _make_selection_df(n=200, seed=0)
@@ -147,6 +156,7 @@ def test_train_val_consistency(base_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 8: build_feature_pipeline returns 4-tuple; feature count reasonable
 # ---------------------------------------------------------------------------
+
 
 def test_pipeline_roundtrip(base_config, synthetic_df) -> None:
     df_out, feature_names, preprocessor, selector = build_feature_pipeline(

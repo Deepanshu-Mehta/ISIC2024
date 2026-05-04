@@ -9,6 +9,7 @@ Usage::
     python -m isic2024.train_image --config configs/phase2.yaml --folds 0
     python -m isic2024.train_image --config configs/phase2.yaml --folds 0,1,2,3,4
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,8 +38,11 @@ from isic2024.models.image_module import ISICImageModule
 _CAT_MAPS: dict[str, dict[str, int]] = {
     "sex": {"male": 0, "female": 1},
     "anatom_site_general": {
-        "anterior torso": 0, "head/neck": 1, "lower extremity": 2,
-        "posterior torso": 3, "upper extremity": 4,
+        "anterior torso": 0,
+        "head/neck": 1,
+        "lower extremity": 2,
+        "posterior torso": 3,
+        "upper extremity": 4,
     },
     "tbp_tile_type": {"3D: white": 0, "3D: XP": 1},
 }
@@ -119,9 +123,7 @@ def create_folds(
     )
 
     folds = []
-    for fold_idx, (train_idx, val_idx) in enumerate(
-        sgkf.split(np.zeros(len(df)), y, groups)
-    ):
+    for fold_idx, (train_idx, val_idx) in enumerate(sgkf.split(np.zeros(len(df)), y, groups)):
         train_patients = set(groups[train_idx])
         val_patients = set(groups[val_idx])
         overlap = train_patients & val_patients
@@ -151,15 +153,21 @@ def predict_tta(
 ) -> np.ndarray:
     """Run TTA with 8 D4 transforms, average sigmoid probabilities."""
     tta_transforms = get_tta_transforms(
-        cfg.augment, cfg.image.size,
-        cfg.image.normalize_mean, cfg.image.normalize_std,
+        cfg.augment,
+        cfg.image.size,
+        cfg.image.normalize_mean,
+        cfg.image.normalize_std,
     )
 
     all_probs = []
     for tfm in tta_transforms:
         ds = ISICImageDataset(
-            val_df, cfg.image.hdf5_path, tfm, cfg.data.target_col,
-            image_size=cfg.image.size, tabular_matrix=val_tabular,
+            val_df,
+            cfg.image.hdf5_path,
+            tfm,
+            cfg.data.target_col,
+            image_size=cfg.image.size,
+            tabular_matrix=val_tabular,
         )
         dl = torch.utils.data.DataLoader(
             ds,
@@ -280,6 +288,7 @@ def train_fold(
     # Cleanup
     if wandb_logger:
         import wandb
+
         wandb.finish()
     del model, trainer, dm
     gc.collect()
@@ -292,14 +301,20 @@ def train_fold(
 def main() -> None:
     parser = argparse.ArgumentParser(description="ISIC 2024 Phase 2: Image Training")
     parser.add_argument(
-        "--config", type=str,
+        "--config",
+        type=str,
         default=str(Path(__file__).parents[2] / "configs" / "phase2.yaml"),
     )
     parser.add_argument("--output-dir", type=str, default="outputs/phase2")
-    parser.add_argument("--folds", type=str, default="0,1,2,3,4",
-                        help="Comma-separated fold indices, e.g. '0' or '0,1,2,3,4'")
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume from last checkpoint if available")
+    parser.add_argument(
+        "--folds",
+        type=str,
+        default="0,1,2,3,4",
+        help="Comma-separated fold indices, e.g. '0' or '0,1,2,3,4'",
+    )
+    parser.add_argument(
+        "--resume", action="store_true", help="Resume from last checkpoint if available"
+    )
     args = parser.parse_args()
 
     cfg = Phase2Config.from_yaml(args.config)
@@ -346,17 +361,25 @@ def main() -> None:
 
         train_idx, val_idx = folds[fold_idx]
         vidx, preds = train_fold(
-            fold_idx, train_idx, val_idx, df, cfg, output_dir, args.resume,
+            fold_idx,
+            train_idx,
+            val_idx,
+            df,
+            cfg,
+            output_dir,
+            args.resume,
         )
         oof_preds[vidx] = preds
         oof_mask[vidx] = True
 
     # Save OOF predictions
-    oof_df = pd.DataFrame({
-        "isic_id": df["isic_id"],
-        "target": df[cfg.data.target_col],
-        "image_pred": oof_preds,
-    })
+    oof_df = pd.DataFrame(
+        {
+            "isic_id": df["isic_id"],
+            "target": df[cfg.data.target_col],
+            "image_pred": oof_preds,
+        }
+    )
     oof_path = output_dir / "oof_image_predictions.csv"
     oof_df.to_csv(oof_path, index=False)
     logger.info(f"OOF predictions saved → {oof_path}")
