@@ -1,4 +1,5 @@
 """Tests for GBDT model wrappers (LightGBM, XGBoost, CatBoost) and model_factory."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -14,6 +15,7 @@ from isic2024.models.gbdt import (
 # ---------------------------------------------------------------------------
 # Synthetic dataset fixture
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def small_dataset():
@@ -54,6 +56,7 @@ def catboost_config(base_config):
 # Test 1: predict_proba output in [0, 1]
 # ---------------------------------------------------------------------------
 
+
 def test_lgbm_predict_proba_range(small_dataset, lgbm_config) -> None:
     X_tr, y_tr, X_val, y_val = small_dataset
     model = LGBMWrapper(lgbm_config)
@@ -73,6 +76,7 @@ def test_xgb_predict_proba_range(small_dataset, xgb_config) -> None:
 
 
 def test_catboost_predict_proba_range(small_dataset, catboost_config) -> None:
+    pytest.importorskip("catboost")
     X_tr, y_tr, X_val, y_val = small_dataset
     model = CatBoostWrapper(catboost_config)
     model.fit(X_tr, y_tr, X_val, y_val)
@@ -84,6 +88,7 @@ def test_catboost_predict_proba_range(small_dataset, catboost_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 2: feature_importance length matches n_features
 # ---------------------------------------------------------------------------
+
 
 def test_lgbm_feature_importance_length(small_dataset, lgbm_config) -> None:
     X_tr, y_tr, X_val, y_val = small_dataset
@@ -102,6 +107,7 @@ def test_xgb_feature_importance_length(small_dataset, xgb_config) -> None:
 
 
 def test_catboost_feature_importance_length(small_dataset, catboost_config) -> None:
+    pytest.importorskip("catboost")
     X_tr, y_tr, X_val, y_val = small_dataset
     model = CatBoostWrapper(catboost_config)
     model.fit(X_tr, y_tr, X_val, y_val)
@@ -112,6 +118,7 @@ def test_catboost_feature_importance_length(small_dataset, catboost_config) -> N
 # ---------------------------------------------------------------------------
 # Test 3: save / load roundtrip
 # ---------------------------------------------------------------------------
+
 
 def test_lgbm_save_load(tmp_path, small_dataset, lgbm_config) -> None:
     X_tr, y_tr, X_val, y_val = small_dataset
@@ -144,6 +151,7 @@ def test_xgb_save_load(tmp_path, small_dataset, xgb_config) -> None:
 # ---------------------------------------------------------------------------
 # Test 4: model_factory returns correct type
 # ---------------------------------------------------------------------------
+
 
 def test_model_factory_lgbm(lgbm_config) -> None:
     model = model_factory("lgbm", lgbm_config)

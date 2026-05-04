@@ -1,4 +1,5 @@
 """Tests for evaluation metrics: pAUC, ECE, compute_metrics."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -10,6 +11,7 @@ from isic2024.evaluation.metrics import compute_ece, compute_metrics, compute_pa
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_realistic(n: int = 500, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
     """Realistic imbalanced binary data with 2% positives."""
@@ -24,6 +26,7 @@ def _make_realistic(n: int = 500, seed: int = 0) -> tuple[np.ndarray, np.ndarray
 # Test 1: perfect classifier → pAUC = 0.20
 # ---------------------------------------------------------------------------
 
+
 def test_perfect_classifier() -> None:
     y_true = np.array([1] * 20 + [0] * 180, dtype=float)
     # Perfect scores: all positives score 1.0, all negatives score 0.0
@@ -35,6 +38,7 @@ def test_perfect_classifier() -> None:
 # ---------------------------------------------------------------------------
 # Test 2: random classifier → pAUC ≈ 0.02
 # ---------------------------------------------------------------------------
+
 
 def test_random_classifier() -> None:
     rng = np.random.default_rng(42)
@@ -50,6 +54,7 @@ def test_random_classifier() -> None:
 # Test 3: all-same prediction → no crash, returns random-baseline pAUC (≈0.02)
 # ---------------------------------------------------------------------------
 
+
 def test_all_same_prediction() -> None:
     y_true = np.array([1, 0, 1, 0, 0], dtype=float)
     y_pred = np.full(5, 0.5)
@@ -61,6 +66,7 @@ def test_all_same_prediction() -> None:
 # ---------------------------------------------------------------------------
 # Test 4: differs from sklearn roc_auc_score(max_fpr=0.2)
 # ---------------------------------------------------------------------------
+
 
 def test_differs_from_sklearn_max_fpr() -> None:
     y_true, y_pred = _make_realistic(n=1000, seed=7)
@@ -82,6 +88,7 @@ def test_differs_from_sklearn_max_fpr() -> None:
 # Test 5: ECE ≈ 0 for perfectly calibrated predictions
 # ---------------------------------------------------------------------------
 
+
 def test_ece_perfect_calibration() -> None:
     # Each bin: predicted probability ≈ observed fraction positive
     rng = np.random.default_rng(0)
@@ -97,6 +104,7 @@ def test_ece_perfect_calibration() -> None:
 # Test 6: ECE ≈ 0.5 for worst-case miscalibration
 # ---------------------------------------------------------------------------
 
+
 def test_ece_worst_calibration() -> None:
     # All predictions = 1.0 but 50% are actually 0
     n = 1000
@@ -110,6 +118,7 @@ def test_ece_worst_calibration() -> None:
 # ---------------------------------------------------------------------------
 # Test 7: compute_metrics returns dict with all keys in [0, 1]
 # ---------------------------------------------------------------------------
+
 
 def test_compute_metrics_returns_dict() -> None:
     y_true, y_pred = _make_realistic(n=500, seed=1)

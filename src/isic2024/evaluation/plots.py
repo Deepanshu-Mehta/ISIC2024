@@ -3,12 +3,13 @@
 All functions return a matplotlib Figure and accept an optional ``ax`` parameter
 for embedding into larger subplot grids.
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 import numpy as np
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import auc, roc_curve
 
 
 def plot_roc_curves(
@@ -82,8 +83,22 @@ def plot_score_distributions(
     for i, (name, y_pred) in enumerate(oof_dict.items()):
         y_pred = np.asarray(y_pred)
         cur_ax = axes[i]
-        cur_ax.hist(y_pred[y_true == 0], bins=50, alpha=0.6, label="Benign", density=True, color="steelblue")
-        cur_ax.hist(y_pred[y_true == 1], bins=50, alpha=0.8, label="Malignant", density=True, color="tomato")
+        cur_ax.hist(
+            y_pred[y_true == 0],
+            bins=50,
+            alpha=0.6,
+            label="Benign",
+            density=True,
+            color="steelblue",
+        )
+        cur_ax.hist(
+            y_pred[y_true == 1],
+            bins=50,
+            alpha=0.8,
+            label="Malignant",
+            density=True,
+            color="tomato",
+        )
         cur_ax.set_xlabel("Predicted Probability")
         cur_ax.set_ylabel("Density")
         cur_ax.set_title(f"Score Distribution — {name}")

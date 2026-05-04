@@ -1,0 +1,218 @@
+[
+  {
+    "isic_id": "ISIC_3865712",
+    "gallery_type": "benign_confident",
+    "gallery_label": "Clearly Benign",
+    "image_path": "gallery/images/ISIC_3865712.jpg",
+    "target": 0,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.1192526120429496,
+      "swin_image": null,
+      "swin_tabular": 0.0065078735351562,
+      "stacker_score": 7.214075875320272e-06,
+      "rank_ensemble": 0.1250314791589267
+    },
+    "metadata": {
+      "age_approx": 45.0,
+      "sex": "male",
+      "anatom_site_general": "lower extremity",
+      "clin_size_long_diam_mm": 2.7,
+      "tbp_lv_dnn_lesion_confidence": 99.99981,
+      "tbp_lv_nevi_confidence": 91.96537,
+      "tbp_lv_norm_border": 2.163101,
+      "tbp_lv_norm_color": 2.353141,
+      "tbp_lv_symm_2axis": 0.232,
+      "tbp_lv_area_perim_ratio": 15.00534
+    }
+  },
+  {
+    "isic_id": "ISIC_2377612",
+    "gallery_type": "benign_confident",
+    "gallery_label": "Clearly Benign",
+    "image_path": "gallery/images/ISIC_2377612.jpg",
+    "target": 0,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.142329848393046,
+      "swin_image": null,
+      "swin_tabular": 0.008636474609375,
+      "stacker_score": 7.94185468064965e-06,
+      "rank_ensemble": 0.1249958235571325
+    },
+    "metadata": {
+      "age_approx": 45.0,
+      "sex": "male",
+      "anatom_site_general": "posterior torso",
+      "clin_size_long_diam_mm": 3.98,
+      "tbp_lv_dnn_lesion_confidence": 99.77508,
+      "tbp_lv_nevi_confidence": 5.894366,
+      "tbp_lv_norm_border": 3.279625,
+      "tbp_lv_norm_color": 4.915017,
+      "tbp_lv_symm_2axis": 0.2926829,
+      "tbp_lv_area_perim_ratio": 18.66514
+    }
+  },
+  {
+    "isic_id": "ISIC_5178444",
+    "gallery_type": "benign_confident",
+    "gallery_label": "Clearly Benign",
+    "image_path": "gallery/images/ISIC_5178444.jpg",
+    "target": 0,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.13051861862386,
+      "swin_image": null,
+      "swin_tabular": 0.007476806640625,
+      "stacker_score": 8.546888663336848e-06,
+      "rank_ensemble": 0.1271134670958637
+    },
+    "metadata": {
+      "age_approx": 45.0,
+      "sex": "male",
+      "anatom_site_general": "anterior torso",
+      "clin_size_long_diam_mm": 3.4,
+      "tbp_lv_dnn_lesion_confidence": 99.8753905296326,
+      "tbp_lv_nevi_confidence": 69.2087233066559,
+      "tbp_lv_norm_border": 3.85098114368754,
+      "tbp_lv_norm_color": 2.58529775014359,
+      "tbp_lv_symm_2axis": 0.359375,
+      "tbp_lv_area_perim_ratio": 19.08949852437
+    }
+  },
+  {
+    "isic_id": "ISIC_4252342",
+    "gallery_type": "malignant_confident",
+    "gallery_label": "Confirmed Malignant",
+    "image_path": "gallery/images/ISIC_4252342.jpg",
+    "target": 1,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.9967926581043356,
+      "swin_image": null,
+      "swin_tabular": 0.64501953125,
+      "stacker_score": 0.9578694944610122,
+      "rank_ensemble": 0.999787313088598
+    },
+    "metadata": {
+      "age_approx": 70.0,
+      "sex": "male",
+      "anatom_site_general": "posterior torso",
+      "clin_size_long_diam_mm": 1.45,
+      "tbp_lv_dnn_lesion_confidence": 0.0503814197145402,
+      "tbp_lv_nevi_confidence": 3.71294656261942e-11,
+      "tbp_lv_norm_border": 2.94828382711908,
+      "tbp_lv_norm_color": 0.0,
+      "tbp_lv_symm_2axis": 0.354838709677419,
+      "tbp_lv_area_perim_ratio": 14.320947167392
+    }
+  },
+  {
+    "isic_id": "ISIC_8966407",
+    "gallery_type": "malignant_confident",
+    "gallery_label": "Confirmed Malignant",
+    "image_path": "gallery/images/ISIC_8966407.jpg",
+    "target": 1,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.9949915930906258,
+      "swin_image": null,
+      "swin_tabular": 0.50048828125,
+      "stacker_score": 0.9577044435011228,
+      "rank_ensemble": 0.9997167499046276
+    },
+    "metadata": {
+      "age_approx": 65.0,
+      "sex": "male",
+      "anatom_site_general": "head/neck",
+      "clin_size_long_diam_mm": 4.18,
+      "tbp_lv_dnn_lesion_confidence": 62.0836555957794,
+      "tbp_lv_nevi_confidence": 0.251051993109286,
+      "tbp_lv_norm_border": 2.0873850976147,
+      "tbp_lv_norm_color": 9.92863500258495,
+      "tbp_lv_symm_2axis": 0.162087912087912,
+      "tbp_lv_area_perim_ratio": 17.4313315458593
+    }
+  },
+  {
+    "isic_id": "ISIC_2480600",
+    "gallery_type": "malignant_confident",
+    "gallery_label": "Confirmed Malignant",
+    "image_path": "gallery/images/ISIC_2480600.jpg",
+    "target": 1,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.996452724744572,
+      "swin_image": null,
+      "swin_tabular": 0.5263671875,
+      "stacker_score": 0.9573896305551066,
+      "rank_ensemble": 0.9990377974313006
+    },
+    "metadata": {
+      "age_approx": 45.0,
+      "sex": "male",
+      "anatom_site_general": "anterior torso",
+      "clin_size_long_diam_mm": 16.45,
+      "tbp_lv_dnn_lesion_confidence": 0.000533441,
+      "tbp_lv_nevi_confidence": 2.734077e-07,
+      "tbp_lv_norm_border": 2.913925,
+      "tbp_lv_norm_color": 10.0,
+      "tbp_lv_symm_2axis": 0.1985481,
+      "tbp_lv_area_perim_ratio": 20.48454
+    }
+  },
+  {
+    "isic_id": "ISIC_1025085",
+    "gallery_type": "edge_case",
+    "gallery_label": "Diagnostic Edge Case",
+    "image_path": "gallery/images/ISIC_1025085.jpg",
+    "target": 0,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.996452724744572,
+      "swin_image": null,
+      "swin_tabular": 0.402099609375,
+      "stacker_score": 0.95780547302969,
+      "rank_ensemble": 0.9996150192365711
+    },
+    "metadata": {
+      "age_approx": 60.0,
+      "sex": "female",
+      "anatom_site_general": "lower extremity",
+      "clin_size_long_diam_mm": 9.39,
+      "tbp_lv_dnn_lesion_confidence": 97.37384,
+      "tbp_lv_nevi_confidence": 0.1214907,
+      "tbp_lv_norm_border": 5.625027,
+      "tbp_lv_norm_color": 7.353003,
+      "tbp_lv_symm_2axis": 0.3115992,
+      "tbp_lv_area_perim_ratio": 30.76508
+    }
+  },
+  {
+    "isic_id": "ISIC_2008771",
+    "gallery_type": "edge_case",
+    "gallery_label": "Diagnostic Edge Case",
+    "image_path": "gallery/images/ISIC_2008771.jpg",
+    "target": 0,
+    "image_extracted": true,
+    "predictions": {
+      "tabular_gbdt": 0.9983364874827227,
+      "swin_image": null,
+      "swin_tabular": 0.53076171875,
+      "stacker_score": 0.9577885813658108,
+      "rank_ensemble": 0.9994763862673572
+    },
+    "metadata": {
+      "age_approx": 55.0,
+      "sex": "male",
+      "anatom_site_general": "anterior torso",
+      "clin_size_long_diam_mm": 1.6,
+      "tbp_lv_dnn_lesion_confidence": 84.4353139400482,
+      "tbp_lv_nevi_confidence": 0.0001443583641957,
+      "tbp_lv_norm_border": 3.00163148535415,
+      "tbp_lv_norm_color": 0.0,
+      "tbp_lv_symm_2axis": 0.321428571428571,
+      "tbp_lv_area_perim_ratio": 15.9715421100316
+    }
+  }
+]

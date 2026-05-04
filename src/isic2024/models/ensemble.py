@@ -8,6 +8,7 @@ uncalibrated scores on different scales).
 Ranking preserves the pAUC metric since it's rank-based, and the average of
 rank-normalised scores is itself a valid ranking.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -51,25 +52,21 @@ class RankEnsemble:
         n = len(predictions[0])
         for i, p in enumerate(predictions[1:], start=1):
             if len(p) != n:
-                raise ValueError(
-                    f"predictions[{i}] has length {len(p)}, expected {n}"
-                )
+                raise ValueError(f"predictions[{i}] has length {len(p)}, expected {n}")
 
         weights = self._weights
         if weights is None:
             weights = [1.0] * len(predictions)
         if len(weights) != len(predictions):
-            raise ValueError(
-                f"len(weights)={len(weights)} != len(predictions)={len(predictions)}"
-            )
+            raise ValueError(f"len(weights)={len(weights)} != len(predictions)={len(predictions)}")
 
         # Convert each model's scores to rank percentiles in [0, 1]
         rank_preds = []
         for pred in predictions:
             ranked = rankdata(pred, method="average")  # ties → average rank
-            rank_preds.append(ranked / len(ranked))    # normalise to [0, 1]
+            rank_preds.append(ranked / len(ranked))  # normalise to [0, 1]
 
         w = np.asarray(weights, dtype=np.float64)
-        stacked = np.stack(rank_preds, axis=0)          # (n_models, n_samples)
+        stacked = np.stack(rank_preds, axis=0)  # (n_models, n_samples)
         blended = np.average(stacked, axis=0, weights=w)
         return blended.astype(np.float64)

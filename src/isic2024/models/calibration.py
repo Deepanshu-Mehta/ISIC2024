@@ -21,6 +21,7 @@ All three share the same interface::
 
 Calibration preserves ranking → does NOT affect pAUC. It improves ECE/Brier.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -29,10 +30,10 @@ import numpy as np
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
-
 # ---------------------------------------------------------------------------
 # Abstract base
 # ---------------------------------------------------------------------------
+
 
 class BaseCalibrator(ABC):
     """Common interface for all calibration wrappers."""
@@ -45,9 +46,7 @@ class BaseCalibrator(ABC):
     def transform(self, y_prob: np.ndarray) -> np.ndarray:
         """Return calibrated probabilities in [0, 1]."""
 
-    def fit_transform(
-        self, y_true: np.ndarray, y_prob: np.ndarray
-    ) -> np.ndarray:
+    def fit_transform(self, y_true: np.ndarray, y_prob: np.ndarray) -> np.ndarray:
         """Fit then transform (convenience wrapper)."""
         return self.fit(y_true, y_prob).transform(y_prob)
 
@@ -55,6 +54,7 @@ class BaseCalibrator(ABC):
 # ---------------------------------------------------------------------------
 # Isotonic Regression (primary)
 # ---------------------------------------------------------------------------
+
 
 class IsotonicCalibrator(BaseCalibrator):
     """Non-parametric monotone calibration via isotonic regression.
@@ -67,9 +67,7 @@ class IsotonicCalibrator(BaseCalibrator):
     def __init__(self) -> None:
         self._iso = IsotonicRegression(out_of_bounds="clip")
 
-    def fit(
-        self, y_true: np.ndarray, y_prob: np.ndarray
-    ) -> IsotonicCalibrator:
+    def fit(self, y_true: np.ndarray, y_prob: np.ndarray) -> IsotonicCalibrator:
         """Fit isotonic regression on OOF predictions.
 
         Args:
@@ -101,6 +99,7 @@ class IsotonicCalibrator(BaseCalibrator):
 # ---------------------------------------------------------------------------
 # Platt Calibration (logistic regression)
 # ---------------------------------------------------------------------------
+
 
 class PlattCalibrator(BaseCalibrator):
     """Sigmoidal calibration via logistic regression (Platt scaling).
@@ -143,6 +142,7 @@ class PlattCalibrator(BaseCalibrator):
 # Temperature Scaling
 # ---------------------------------------------------------------------------
 
+
 class TemperatureScaler(BaseCalibrator):
     """Scalar temperature calibration: sigmoid(logit(p) / T).
 
@@ -163,9 +163,7 @@ class TemperatureScaler(BaseCalibrator):
         """Fitted temperature value."""
         return self._temperature
 
-    def fit(
-        self, y_true: np.ndarray, y_prob: np.ndarray
-    ) -> TemperatureScaler:
+    def fit(self, y_true: np.ndarray, y_prob: np.ndarray) -> TemperatureScaler:
         """Find T that minimises NLL on calibration data.
 
         Args:
@@ -184,8 +182,7 @@ class TemperatureScaler(BaseCalibrator):
         for t in np.linspace(0.1, 10.0, 500):
             scaled = self._sigmoid(logits / t)
             nll = -np.mean(
-                y_true * np.log(scaled + 1e-15)
-                + (1.0 - y_true) * np.log(1.0 - scaled + 1e-15)
+                y_true * np.log(scaled + 1e-15) + (1.0 - y_true) * np.log(1.0 - scaled + 1e-15)
             )
             if nll < best_nll:
                 best_nll = nll
@@ -238,7 +235,6 @@ def calibrator_factory(method: str) -> BaseCalibrator:
     method = method.lower()
     if method not in _CALIBRATOR_REGISTRY:
         raise ValueError(
-            f"Unknown calibration method '{method}'. "
-            f"Choose from: {list(_CALIBRATOR_REGISTRY)}"
+            f"Unknown calibration method '{method}'. Choose from: {list(_CALIBRATOR_REGISTRY)}"
         )
     return _CALIBRATOR_REGISTRY[method]()

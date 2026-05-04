@@ -3,6 +3,7 @@
 Handles leakage removal, indicator creation, imputation, and categorical encoding.
 Designed for fit/transform pattern so train statistics are never leaked into validation.
 """
+
 from __future__ import annotations
 
 import re
@@ -14,7 +15,6 @@ from loguru import logger
 from sklearn.preprocessing import LabelEncoder
 
 from isic2024.config import DataConfig
-
 
 # Columns to always drop — purely administrative, zero predictive value
 _ALWAYS_DROP = ["isic_id", "image_type", "copyright_license"]
@@ -31,7 +31,13 @@ _LEAKAGE_REGEX = re.compile(r"^iddx_")
 
 # Categorical columns to label-encode (tbp_tile_type KEPT — mild EDA signal;
 # tbp_lv_location_simple needed for ugly duckling Step-5 groupings)
-_CATEGORICALS = ["sex", "anatom_site_general", "attribution", "tbp_tile_type", "tbp_lv_location_simple"]
+_CATEGORICALS = [
+    "sex",
+    "anatom_site_general",
+    "attribution",
+    "tbp_tile_type",
+    "tbp_lv_location_simple",
+]
 
 # Imputation strategy per column
 _IMPUTE_CONFIG: dict[str, str] = {
@@ -76,7 +82,7 @@ class Preprocessor:
         df = df.copy()
         df = self._pre_indicators(df)
         df = self._drop_columns(df)
-        df = self._add_missing_indicators(df, fit=True)   # before imputation
+        df = self._add_missing_indicators(df, fit=True)  # before imputation
         df = self._fit_impute(df)
         df = self._fit_encode(df)
         df = self._fill_remaining_nan(df)
@@ -141,9 +147,7 @@ class Preprocessor:
         always = [c for c in _ALWAYS_DROP if c in df.columns]
         lesion_id = [_LESION_ID_COL] if _LESION_ID_COL in df.columns else []
 
-        to_drop = list(
-            dict.fromkeys(leakage_explicit + leakage_regex + meta + always + lesion_id)
-        )
+        to_drop = list(dict.fromkeys(leakage_explicit + leakage_regex + meta + always + lesion_id))
         if to_drop:
             logger.debug(f"Dropping {len(to_drop)} columns: {to_drop}")
         return df.drop(columns=to_drop, errors="ignore")
@@ -163,9 +167,7 @@ class Preprocessor:
                 raise ValueError(f"Unknown impute strategy '{strategy}' for '{col}'")
             self._impute_values[col] = fill
             if n_missing:
-                logger.debug(
-                    f"Imputing '{col}' ({n_missing} missing, {strategy}={fill!r})"
-                )
+                logger.debug(f"Imputing '{col}' ({n_missing} missing, {strategy}={fill!r})")
         return self._apply_impute(df)
 
     def _apply_impute(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -204,16 +206,12 @@ class Preprocessor:
 
         Indicators are created before filling remaining NaNs with 0.
         """
-        numeric_cols: list[str] = [
-            str(c) for c in df.select_dtypes(include=[np.number]).columns
-        ]
+        numeric_cols: list[str] = [str(c) for c in df.select_dtypes(include=[np.number]).columns]
         skip = {self._config.target_col, self._config.patient_col, "has_lesion_id"}
         numeric_cols = [c for c in numeric_cols if c not in skip]
 
         if fit:
-            self._missing_indicator_cols = [
-                c for c in numeric_cols if df[c].isna().mean() > 0.01
-            ]
+            self._missing_indicator_cols = [c for c in numeric_cols if df[c].isna().mean() > 0.01]
             if self._missing_indicator_cols:
                 logger.debug(
                     f"Adding missing indicators for {len(self._missing_indicator_cols)} "

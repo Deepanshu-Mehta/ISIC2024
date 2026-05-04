@@ -3,6 +3,7 @@
 The synthetic DataFrame mirrors the real dataset's column structure so tests
 can run without downloading the actual Kaggle data.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -15,10 +16,12 @@ from isic2024.config import Config
 # Config fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def base_config() -> Config:
     """Default Config loaded from configs/base.yaml."""
     import pathlib
+
     yaml_path = pathlib.Path(__file__).parents[1] / "configs" / "base.yaml"
     return Config.from_yaml(yaml_path)
 
@@ -26,6 +29,7 @@ def base_config() -> Config:
 # ---------------------------------------------------------------------------
 # Synthetic DataFrame fixture
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def synthetic_df() -> pd.DataFrame:
@@ -44,7 +48,7 @@ def synthetic_df() -> pd.DataFrame:
     patients = np.repeat(patient_ids, 20)
 
     target = np.zeros(n, dtype=np.int8)
-    malignant_idx = [0, 20, 40]   # one per first 3 patients
+    malignant_idx = [0, 20, 40]  # one per first 3 patients
     target[malignant_idx] = 1
 
     # lesion_id: non-null for all malignant rows + 5 extra benign (biopsied but benign)
@@ -56,7 +60,7 @@ def synthetic_df() -> pd.DataFrame:
 
     # age_approx: discretised to multiples of 5 (matches SLICE-3D privacy rounding)
     age = rng.choice([25, 30, 35, 40, 45, 50, 55, 60, 65, 70], size=n).astype(float)
-    age[[1, 10, 22, 50, 70, 90]] = np.nan   # 6% missing → triggers missing indicator
+    age[[1, 10, 22, 50, 70, 90]] = np.nan  # 6% missing → triggers missing indicator
 
     tbp_cols = {
         "tbp_lv_areaMM2": rng.uniform(0.5, 50.0, n),
@@ -99,9 +103,7 @@ def synthetic_df() -> pd.DataFrame:
             ),
             "clin_size_long_diam_mm": rng.uniform(1.0, 20.0, n),
             # Hospital source (EDA: 7.8× variation in malignancy rate)
-            "attribution": rng.choice(
-                ["Hospital_A", "Hospital_B", "Hospital_C"], size=n
-            ),
+            "attribution": rng.choice(["Hospital_A", "Hospital_B", "Hospital_C"], size=n),
             # Scan type (EDA: mild signal — keep as feature)
             "tbp_tile_type": rng.choice(["3D: white", "3D: XP"], size=n, p=[0.7, 0.3]),
             # Zero-variance metadata (EDA: all same value → drop)

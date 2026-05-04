@@ -1,4 +1,5 @@
 """HDF5 image dataset and Lightning DataModule for Phase 2."""
+
 from __future__ import annotations
 
 import logging
@@ -64,7 +65,8 @@ class ISICImageDataset(Dataset):
             fp = self._open_hdf5()
             jpeg_bytes = fp[isic_id][()]
             image = cv2.imdecode(
-                np.frombuffer(jpeg_bytes, dtype=np.uint8), cv2.IMREAD_COLOR,
+                np.frombuffer(jpeg_bytes, dtype=np.uint8),
+                cv2.IMREAD_COLOR,
             )
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         except Exception:
@@ -119,20 +121,32 @@ class ISICDataModule(L.LightningDataModule):
     def setup(self, stage: str | None = None) -> None:
         cfg = self.cfg
         train_tfm = get_train_transforms(
-            cfg.augment, cfg.image.size,
-            cfg.image.normalize_mean, cfg.image.normalize_std,
+            cfg.augment,
+            cfg.image.size,
+            cfg.image.normalize_mean,
+            cfg.image.normalize_std,
         )
         val_tfm = get_val_transforms(
-            cfg.augment, cfg.image.size,
-            cfg.image.normalize_mean, cfg.image.normalize_std,
+            cfg.augment,
+            cfg.image.size,
+            cfg.image.normalize_mean,
+            cfg.image.normalize_std,
         )
         self.train_dataset = ISICImageDataset(
-            self.train_df, cfg.image.hdf5_path, train_tfm, cfg.data.target_col,
-            image_size=cfg.image.size, tabular_matrix=self.train_tabular,
+            self.train_df,
+            cfg.image.hdf5_path,
+            train_tfm,
+            cfg.data.target_col,
+            image_size=cfg.image.size,
+            tabular_matrix=self.train_tabular,
         )
         self.val_dataset = ISICImageDataset(
-            self.val_df, cfg.image.hdf5_path, val_tfm, cfg.data.target_col,
-            image_size=cfg.image.size, tabular_matrix=self.val_tabular,
+            self.val_df,
+            cfg.image.hdf5_path,
+            val_tfm,
+            cfg.data.target_col,
+            image_size=cfg.image.size,
+            tabular_matrix=self.val_tabular,
         )
 
     def train_dataloader(self) -> DataLoader:

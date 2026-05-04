@@ -18,6 +18,7 @@ Typical usage (test/validation)::
     )
     X_test = df_out[feature_names].values
 """
+
 from __future__ import annotations
 
 import pandas as pd
@@ -76,13 +77,9 @@ def build_feature_pipeline(
         logger.info(f"Preprocessing complete: {df.shape[1]} columns")
     else:
         if preprocessor is None:
-            raise ValueError(
-                "preprocessor must be provided when is_train=False"
-            )
+            raise ValueError("preprocessor must be provided when is_train=False")
         if selector is None:
-            raise ValueError(
-                "selector must be provided when is_train=False"
-            )
+            raise ValueError("selector must be provided when is_train=False")
         df = preprocessor.transform(df)
 
     # ------------------------------------------------------------------

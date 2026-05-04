@@ -1,4 +1,5 @@
 """Tests for IsotonicCalibrator, PlattCalibrator, TemperatureScaler, and factory."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -11,10 +12,10 @@ from isic2024.models.calibration import (
     calibrator_factory,
 )
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_calibration_data(n: int = 500, seed: int = 0):
     """Synthetic over-confident predictions (common GBDT pattern)."""
@@ -22,10 +23,9 @@ def _make_calibration_data(n: int = 500, seed: int = 0):
     y_true = (rng.random(n) < 0.1).astype(float)  # 10% positives
     # Predictions shifted toward 0/1 (over-confident)
     y_prob = np.clip(
-        np.where(y_true == 1,
-                 rng.uniform(0.6, 0.99, n),
-                 rng.uniform(0.01, 0.4, n)),
-        0.01, 0.99,
+        np.where(y_true == 1, rng.uniform(0.6, 0.99, n), rng.uniform(0.01, 0.4, n)),
+        0.01,
+        0.99,
     )
     return y_true, y_prob
 
@@ -33,6 +33,7 @@ def _make_calibration_data(n: int = 500, seed: int = 0):
 # ---------------------------------------------------------------------------
 # Test 1: IsotonicCalibrator output in [0, 1]
 # ---------------------------------------------------------------------------
+
 
 def test_isotonic_output_range() -> None:
     y_true, y_prob = _make_calibration_data()
@@ -46,6 +47,7 @@ def test_isotonic_output_range() -> None:
 # ---------------------------------------------------------------------------
 # Test 2: IsotonicCalibrator is monotone (rank-preserving)
 # ---------------------------------------------------------------------------
+
 
 def test_isotonic_is_monotone() -> None:
     """Calibrated scores must be non-decreasing w.r.t. original scores."""
@@ -62,6 +64,7 @@ def test_isotonic_is_monotone() -> None:
 # Test 3: PlattCalibrator output in [0, 1]
 # ---------------------------------------------------------------------------
 
+
 def test_platt_output_range() -> None:
     y_true, y_prob = _make_calibration_data()
     cal = PlattCalibrator()
@@ -74,6 +77,7 @@ def test_platt_output_range() -> None:
 # ---------------------------------------------------------------------------
 # Test 4: TemperatureScaler with T=1 is approximately identity
 # ---------------------------------------------------------------------------
+
 
 def test_temperature_identity_at_t1() -> None:
     """When temperature=1, transform(p) ≈ p (up to floating-point clipping)."""
@@ -89,6 +93,7 @@ def test_temperature_identity_at_t1() -> None:
 # Test 5: TemperatureScaler fits without error and T > 0
 # ---------------------------------------------------------------------------
 
+
 def test_temperature_scaler_fits() -> None:
     y_true, y_prob = _make_calibration_data()
     scaler = TemperatureScaler()
@@ -101,6 +106,7 @@ def test_temperature_scaler_fits() -> None:
 # ---------------------------------------------------------------------------
 # Test 6: fit_transform convenience wrapper matches fit then transform
 # ---------------------------------------------------------------------------
+
 
 def test_fit_transform_matches_fit_then_transform() -> None:
     y_true, y_prob = _make_calibration_data(seed=7)
@@ -118,6 +124,7 @@ def test_fit_transform_matches_fit_then_transform() -> None:
 # ---------------------------------------------------------------------------
 # Test 7: calibration reduces ECE for over-confident predictions
 # ---------------------------------------------------------------------------
+
 
 def _ece(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
     bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
@@ -147,6 +154,7 @@ def test_isotonic_reduces_ece() -> None:
 # ---------------------------------------------------------------------------
 # Test 8: calibrator_factory returns correct types
 # ---------------------------------------------------------------------------
+
 
 def test_factory_returns_isotonic() -> None:
     assert isinstance(calibrator_factory("isotonic"), IsotonicCalibrator)

@@ -13,6 +13,7 @@ Architecture (tabular conditioning enabled):
                                       ↓
                            Dropout → Linear(1)
 """
+
 from __future__ import annotations
 
 import lightning as L

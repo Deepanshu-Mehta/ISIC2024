@@ -12,6 +12,7 @@ All wrappers use sklearn-compatible estimators for consistency:
     - Early stopping on validation AUC
     - Seed 42 for reproducibility (overridable per-call for seed averaging)
 """
+
 from __future__ import annotations
 
 import math
@@ -25,6 +26,7 @@ from loguru import logger
 # ---------------------------------------------------------------------------
 # Abstract base
 # ---------------------------------------------------------------------------
+
 
 class BaseModel(ABC):
     """Common interface for all model wrappers."""
@@ -68,6 +70,7 @@ class BaseModel(ABC):
 # ---------------------------------------------------------------------------
 # LightGBM
 # ---------------------------------------------------------------------------
+
 
 class LGBMWrapper(BaseModel):
     """LightGBM binary classifier wrapper (sklearn API)."""
@@ -122,9 +125,7 @@ class LGBMWrapper(BaseModel):
         )
         best_iter = self._model.best_iteration_
         val_auc = self._model.best_score_["valid_0"][cfg.metric]
-        logger.info(
-            f"LGBMWrapper: best_iteration={best_iter}  val_{cfg.metric}={val_auc:.4f}"
-        )
+        logger.info(f"LGBMWrapper: best_iteration={best_iter}  val_{cfg.metric}={val_auc:.4f}")
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -137,6 +138,7 @@ class LGBMWrapper(BaseModel):
 # ---------------------------------------------------------------------------
 # XGBoost
 # ---------------------------------------------------------------------------
+
 
 class XGBWrapper(BaseModel):
     """XGBoost binary classifier wrapper (sklearn API)."""
@@ -182,9 +184,7 @@ class XGBWrapper(BaseModel):
         )
         best_iter = self._model.best_iteration
         val_auc = self._model.best_score
-        logger.info(
-            f"XGBWrapper: best_iteration={best_iter}  val_{cfg.eval_metric}={val_auc:.4f}"
-        )
+        logger.info(f"XGBWrapper: best_iteration={best_iter}  val_{cfg.eval_metric}={val_auc:.4f}")
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -197,6 +197,7 @@ class XGBWrapper(BaseModel):
 # ---------------------------------------------------------------------------
 # CatBoost
 # ---------------------------------------------------------------------------
+
 
 class CatBoostWrapper(BaseModel):
     """CatBoost binary classifier wrapper (sklearn API)."""

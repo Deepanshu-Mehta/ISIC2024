@@ -2,6 +2,7 @@
 
 All settings live in configs/base.yaml. Load with Config.from_yaml(path).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -19,13 +20,24 @@ class DataConfig:
     test_file: str = "test-metadata.csv"
     target_col: str = "target"
     patient_col: str = "patient_id"
-    leakage_cols: list[str] = field(default_factory=lambda: [
-        "mel_thick_mm", "mel_mitotic_index",
-        "iddx_full", "iddx_1", "iddx_2", "iddx_3", "iddx_4", "iddx_5",
-    ])
-    meta_cols: list[str] = field(default_factory=lambda: [
-        "image_type", "copyright_license",
-    ])  # tbp_tile_type KEPT — EDA shows mild malignancy signal (3D:white vs 3D:XP)
+    leakage_cols: list[str] = field(
+        default_factory=lambda: [
+            "mel_thick_mm",
+            "mel_mitotic_index",
+            "iddx_full",
+            "iddx_1",
+            "iddx_2",
+            "iddx_3",
+            "iddx_4",
+            "iddx_5",
+        ]
+    )
+    meta_cols: list[str] = field(
+        default_factory=lambda: [
+            "image_type",
+            "copyright_license",
+        ]
+    )  # tbp_tile_type KEPT — EDA shows mild malignancy signal (3D:white vs 3D:XP)
 
     @property
     def train_path(self) -> Path:
@@ -63,7 +75,7 @@ class LGBMConfig:
     learning_rate: float = 0.05
     num_leaves: int = 63
     max_depth: int = 6
-    min_child_samples: int = 1          # disabled — use weight-based constraint below
+    min_child_samples: int = 1  # disabled — use weight-based constraint below
     min_sum_hessian_in_leaf: float = 10.0  # weight-based (equiv. to XGB min_child_weight)
     feature_fraction: float = 0.8
     bagging_fraction: float = 0.8

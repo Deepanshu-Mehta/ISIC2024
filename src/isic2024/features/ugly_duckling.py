@@ -9,6 +9,7 @@ module computes per-lesion z-scores relative to three grouping levels (from the
   2. [patient_id, anatom_site_general]     — weird for this body region?
   3. [patient_id, tbp_lv_location_simple]  — weird for this exact TBP location?
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -52,11 +53,7 @@ def _select_feature_cols(df: pd.DataFrame) -> list[str]:
         and c not in _EXCLUDE_FROM_Z
         and pd.api.types.is_numeric_dtype(df[c])
     ]
-    extra = [
-        c
-        for c in _EXTRA_NUMERIC
-        if c in df.columns and pd.api.types.is_numeric_dtype(df[c])
-    ]
+    extra = [c for c in _EXTRA_NUMERIC if c in df.columns and pd.api.types.is_numeric_dtype(df[c])]
     return tbp_numeric + extra
 
 
@@ -105,9 +102,7 @@ def compute_ugly_duckling(
         dtype=np.float64,
     )
 
-    ecdf = df.groupby(group_cols)[feature_cols].transform(
-        lambda x: x.rank(pct=True)
-    )
+    ecdf = df.groupby(group_cols)[feature_cols].transform(lambda x: x.rank(pct=True))
     # Single-member groups: rank(pct=True) returns 1.0 — replace with neutral 0.5.
     group_size = df.groupby(group_cols)[feature_cols[0]].transform("count")
     single_mask = (group_size == 1).values

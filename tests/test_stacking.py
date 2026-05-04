@@ -1,4 +1,5 @@
 """Tests for the Phase 3 stacking meta-learner."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -28,11 +29,13 @@ def _create_synthetic_data(tmp_path: Path, n: int = 200, n_pos: int = 10) -> dic
 
     # Phase 1 OOF
     phase1_path = tmp_path / "oof_predictions.csv"
-    pd.DataFrame({
-        "isic_id": isic_ids,
-        "target": targets.astype(float),
-        "ensemble": rng.rand(n),
-    }).to_csv(phase1_path, index=False)
+    pd.DataFrame(
+        {
+            "isic_id": isic_ids,
+            "target": targets.astype(float),
+            "ensemble": rng.rand(n),
+        }
+    ).to_csv(phase1_path, index=False)
 
     # Fold assignments
     fold_path = tmp_path / "fold_assignments.csv"
@@ -43,11 +46,13 @@ def _create_synthetic_data(tmp_path: Path, n: int = 200, n_pos: int = 10) -> dic
     for backbone in BACKBONES:
         bdir = phase2_dir / backbone
         bdir.mkdir(parents=True)
-        pd.DataFrame({
-            "isic_id": isic_ids,
-            "target": targets,
-            "image_pred": rng.rand(n),
-        }).to_csv(bdir / "oof_image_predictions.csv", index=False)
+        pd.DataFrame(
+            {
+                "isic_id": isic_ids,
+                "target": targets,
+                "image_pred": rng.rand(n),
+            }
+        ).to_csv(bdir / "oof_image_predictions.csv", index=False)
 
     return {
         "phase1_path": phase1_path,

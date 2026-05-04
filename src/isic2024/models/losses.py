@@ -1,4 +1,5 @@
 """Loss functions for Phase 2 image models."""
+
 from __future__ import annotations
 
 import torch
