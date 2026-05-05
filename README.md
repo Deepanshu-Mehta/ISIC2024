@@ -1,3 +1,5 @@
+![CI](https://github.com/Deepanshu-Mehta/ISIC2024/actions/workflows/ci.yml/badge.svg)
+
 # ISIC 2024 — Skin Cancer Detection
 
 Binary classification of malignant vs benign skin lesions from the [ISIC 2024 SLICE-3D dataset](https://www.kaggle.com/competitions/isic-2024-challenge). Three-phase ensemble: tabular GBDT (Phase 1) + image deep learning with cross-modal tabular conditioning (Phase 2) + stacking meta-learner (Phase 3).
@@ -19,6 +21,8 @@ docker run -p 7860:7860 isic2024-demo
 ```
 
 ## Architecture
+
+![Architecture Diagram](report/figures/architecture.png)
 
 ```
 Phase 1: Tabular GBDT Ensemble (pAUC = 0.1672)
@@ -155,13 +159,13 @@ SwinV2-B + Tabular (pAUC=0.1588) excluded from stacker: highly correlated with v
 
 ### Ablation Study (leave-one-out, LogReg stacker)
 
-| Source removed | pAUC | Drop |
-|----------------|------|------|
+| Source removed | pAUC w/o | Drop |
+|----------------|----------|------|
 | Tabular GBDT | 0.1633 | -0.0112 (-6.4%) |
-| EVA-02 | 0.1737 | -0.0008 |
-| ConvNeXtV2 | 0.1735 | -0.0010 |
-| SwinV2-B | 0.1736 | -0.0009 |
-| EfficientNetV2-S | 0.1748 | +0.0003 |
+| SwinV2-B | 0.1720 | -0.0024 (-1.4%) |
+| ConvNeXtV2 | 0.1736 | -0.0009 (-0.5%) |
+| EVA-02 | 0.1736 | -0.0009 (-0.5%) |
+| EfficientNetV2-S | 0.1748 | +0.0003 (+0.2%) |
 | **Full ensemble** | **0.1745** | — |
 
 Tabular GBDT is the most impactful single source by a large margin (-6.4% when removed).
